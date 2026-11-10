@@ -21,4 +21,16 @@ public interface Hl7Parser {
      * @return the structured Hl7Message
      */
     Hl7Message parse(String rawHl7);
+
+    /**
+     * Parses the raw HL7 string into an Hl7Message domain model with a pre-detected version,
+     * avoiding redundant detection re-scans.
+     *
+     * @param rawHl7 the raw message text
+     * @param detectedVersion the previously detected HL7 version, or null to detect automatically
+     * @return the structured Hl7Message
+     */
+    default Hl7Message parse(String rawHl7, Hl7Version detectedVersion) {
+        return parse(rawHl7);
+    }
 }

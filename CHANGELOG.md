@@ -8,6 +8,13 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [Não Lançado]
 
 ### Adicionado
+- `Hl7Version` transformada em tipo imutável aberto e comparável (`Comparable<Hl7Version>`), preservando versões como `2.9` e `2.8.2` sem forçá-las a `UNKNOWN`
+- `Hl7VersionProfile` carregado a partir de perfis em `resources/hl7/profiles/*.properties` (2.1 a 2.8) com fallback automático para o perfil mais próximo abaixo
+- Utilitário `Hl7DateTime` para interpretação robusta de timestamps HL7 `TS`/`DTM` com precisões variáveis e fusos horários (`OffsetDateTime`, `LocalDateTime`, `LocalDate`)
+- Coleta de advertências de conformidade em `Hl7Message.warnings()` (para versões desconhecidas e fallbacks de perfil)
+- `Hl7Handler.builder()` para instanciação e customização isoladas de leitores e registros de parsers sem efeitos colaterais globais
+- Cache da mensagem parseada em `DefaultHl7Reader` para evitar múltiplos parses desnecessários em chamadas subsequentes
+- Resiliência em `Hl7VersionDetector` para ignorar preâmbulos de lotes (`FHS`, `BHS`) e lixo antes do MSH
 - `MllpFramingException` para sinalização de violações de moldura MLLP (truncamento por EOF, stream sem 0x0B e limite de tamanho excedido)
 - Detecção automática de encoding da mensagem via `MSH-18` em `Hl7Charsets` (`ASCII`, `8859/1`, `8859/15`, `UNICODE`, `UTF-8`, `UTF-16`)
 - Gerador de confirmação HL7 ciente da versão em `Hl7AckGenerator`, ecoando `MSH-12`, invertendo `MSH-3/4` ↔ `MSH-5/6`, gerando `MSH-9` e timestamp conforme a versão

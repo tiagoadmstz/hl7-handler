@@ -14,11 +14,17 @@ public class Hl7Message {
     private final Hl7Version version;
     private final Hl7Delimiters delimiters;
     private final List<Hl7Segment> segments;
+    private final List<String> warnings;
 
     public Hl7Message(Hl7Version version, Hl7Delimiters delimiters, List<Hl7Segment> segments) {
+        this(version, delimiters, segments, Collections.emptyList());
+    }
+
+    public Hl7Message(Hl7Version version, Hl7Delimiters delimiters, List<Hl7Segment> segments, List<String> warnings) {
         this.version = version != null ? version : Hl7Version.UNKNOWN;
         this.delimiters = delimiters != null ? delimiters : Hl7Delimiters.DEFAULT;
         this.segments = segments != null ? new ArrayList<>(segments) : new ArrayList<>();
+        this.warnings = warnings != null ? Collections.unmodifiableList(new ArrayList<>(warnings)) : Collections.emptyList();
     }
 
     public Hl7Version getVersion() {
@@ -31,6 +37,18 @@ public class Hl7Message {
 
     public List<Hl7Segment> getSegments() {
         return Collections.unmodifiableList(segments);
+    }
+
+    public List<String> getWarnings() {
+        return warnings;
+    }
+
+    public List<String> warnings() {
+        return warnings;
+    }
+
+    public boolean hasWarnings() {
+        return !warnings.isEmpty();
     }
 
     /**

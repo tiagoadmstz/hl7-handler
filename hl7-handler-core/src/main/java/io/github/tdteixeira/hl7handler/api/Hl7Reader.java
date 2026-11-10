@@ -48,6 +48,11 @@ public interface Hl7Reader {
     Hl7Reader withMappingContent(String yamlContent);
 
     /**
+     * Configures an in-memory Map structure as mapping definition.
+     */
+    Hl7Reader withMapping(Map<String, Object> mappingConfig);
+
+    /**
      * Parses and returns the full structured Hl7Message domain model.
      */
     Hl7Message toMessage();

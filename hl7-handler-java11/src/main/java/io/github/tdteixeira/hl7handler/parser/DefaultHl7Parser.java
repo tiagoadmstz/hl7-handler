@@ -7,16 +7,28 @@ import io.github.tdteixeira.hl7handler.model.Hl7Field;
 import io.github.tdteixeira.hl7handler.model.Hl7Message;
 import io.github.tdteixeira.hl7handler.model.Hl7Segment;
 import io.github.tdteixeira.hl7handler.model.Hl7Version;
+import io.github.tdteixeira.hl7handler.model.Hl7VersionProfile;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
 /**
  * Standard robust HL7 v2 parser supporting delimiters, repetitions,
- * components, and subcomponents.
+ * components, subcomponents, version profiles, and conformance warnings.
  */
 public class DefaultHl7Parser implements Hl7Parser {
+
+    private final Hl7Delimiters defaultDelimiters;
+
+    public DefaultHl7Parser() {
+        this(Hl7Delimiters.DEFAULT);
+    }
+
+    public DefaultHl7Parser(Hl7Delimiters defaultDelimiters) {
+        this.defaultDelimiters = defaultDelimiters != null ? defaultDelimiters : Hl7Delimiters.DEFAULT;
+    }
 
     @Override
     public boolean supports(Hl7Version version) {
@@ -25,12 +37,25 @@ public class DefaultHl7Parser implements Hl7Parser {
 
     @Override
     public Hl7Message parse(String rawHl7) {
+        return parse(rawHl7, null);
+    }
+
+    @Override
+    public Hl7Message parse(String rawHl7, Hl7Version detectedVersion) {
         if (rawHl7 == null || rawHl7.trim().isEmpty()) {
-            return new Hl7Message(Hl7Version.UNKNOWN, Hl7Delimiters.DEFAULT, List.of());
+            return new Hl7Message(Hl7Version.UNKNOWN, defaultDelimiters, Collections.emptyList(), Collections.emptyList());
         }
 
-        Hl7Version version = Hl7VersionDetector.detect(rawHl7);
+        Hl7Version version = detectedVersion != null ? detectedVersion : Hl7VersionDetector.detect(rawHl7);
         Hl7Delimiters delimiters = extractDelimiters(rawHl7);
+        Hl7VersionProfile profile = Hl7VersionProfile.profileFor(version);
+
+        List<String> warnings = new ArrayList<>();
+        if (version.isUnknown()) {
+            warnings.add("Unknown HL7 version detected; falling back to profile " + profile.getVersion().getIdentifier());
+        } else if (profile.isFallbackFor(version)) {
+            warnings.add("HL7 version " + version.getIdentifier() + " does not have an exact profile; falling back to profile " + profile.getVersion().getIdentifier());
+        }
 
         String[] rawLines = rawHl7.split("\r\n|\r|\n");
         List<Hl7Segment> segments = new ArrayList<>();
@@ -42,15 +67,15 @@ public class DefaultHl7Parser implements Hl7Parser {
             segments.add(parseSegment(line, delimiters));
         }
 
-        return new Hl7Message(version, delimiters, segments);
+        return new Hl7Message(version, delimiters, segments, warnings);
     }
 
     private Hl7Delimiters extractDelimiters(String rawHl7) {
-        int mshIdx = rawHl7.indexOf("MSH");
+        int mshIdx = Hl7VersionDetector.findMshIndex(rawHl7);
         if (mshIdx != -1) {
             return Hl7Delimiters.fromMshHeader(rawHl7.substring(mshIdx));
         }
-        return Hl7Delimiters.DEFAULT;
+        return defaultDelimiters;
     }
 
     private Hl7Segment parseSegment(String line, Hl7Delimiters delims) {
@@ -83,7 +108,7 @@ public class DefaultHl7Parser implements Hl7Parser {
 
     private Hl7Field parseField(String rawField, Hl7Delimiters delims) {
         if (rawField == null || rawField.isEmpty()) {
-            return new Hl7Field(delims.componentSeparator(), List.of());
+            return new Hl7Field(delims.componentSeparator(), Collections.emptyList());
         }
 
         String repSepRegex = Pattern.quote(String.valueOf(delims.repetitionSeparator()));
@@ -117,7 +142,7 @@ public class DefaultHl7Parser implements Hl7Parser {
                     components.add(new Hl7Component(decodedCompBuilder.toString(), rawComp, decodedSubList, rawSubList));
                 } else {
                     String decodedComp = Hl7Escapes.decode(rawComp, delims);
-                    components.add(new Hl7Component(decodedComp, rawComp, List.of(), List.of()));
+                    components.add(new Hl7Component(decodedComp, rawComp, Collections.emptyList(), Collections.emptyList()));
                 }
             }
             repetitionList.add(components);
@@ -127,6 +152,6 @@ public class DefaultHl7Parser implements Hl7Parser {
     }
 
     private Hl7Field createSimpleField(String val, char compSep) {
-        return new Hl7Field(compSep, List.of(List.of(new Hl7Component(val, val, List.of(), List.of()))));
+        return new Hl7Field(compSep, Collections.singletonList(Collections.singletonList(new Hl7Component(val, val, Collections.emptyList(), Collections.emptyList()))));
     }
 }

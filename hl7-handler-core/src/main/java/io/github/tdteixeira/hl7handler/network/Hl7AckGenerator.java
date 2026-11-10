@@ -3,6 +3,7 @@ package io.github.tdteixeira.hl7handler.network;
 import io.github.tdteixeira.hl7handler.model.Hl7Delimiters;
 import io.github.tdteixeira.hl7handler.model.Hl7Message;
 import io.github.tdteixeira.hl7handler.model.Hl7Version;
+import io.github.tdteixeira.hl7handler.model.Hl7VersionProfile;
 
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -57,8 +58,9 @@ public final class Hl7AckGenerator {
 
         OffsetDateTime now = OffsetDateTime.now();
         Hl7Version version = incomingMessage.getVersion();
+        Hl7VersionProfile profile = Hl7VersionProfile.profileFor(version);
         String timestamp;
-        if (version == Hl7Version.V2_6 || version == Hl7Version.V2_7 || "2.6".equals(rawVersion) || "2.7".equals(rawVersion)) {
+        if ("DTM".equalsIgnoreCase(profile.getDateType())) {
             timestamp = now.format(DTM_FORMATTER);
         } else {
             timestamp = now.format(TS_FORMATTER);
@@ -73,9 +75,9 @@ public final class Hl7AckGenerator {
         }
 
         String messageType;
-        if (version == Hl7Version.V2_1 || "2.1".equals(rawVersion)) {
+        if ("MSG".equalsIgnoreCase(profile.getMsh9Format())) {
             messageType = "ACK";
-        } else if (version == Hl7Version.V2_2 || version == Hl7Version.V2_3 || "2.2".equals(rawVersion) || "2.3".equals(rawVersion)) {
+        } else if ("MSG_EVENT".equalsIgnoreCase(profile.getMsh9Format())) {
             messageType = "ACK" + cs + event;
         } else {
             messageType = "ACK" + cs + event + cs + "ACK";

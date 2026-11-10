@@ -121,6 +121,7 @@ class Hl7VersionCompatibilityTest {
     void shouldParseVersion28() {
         Hl7Message message = parse("v28-adt.hl7");
 
+        assertThat(message.getVersion()).isEqualTo(Hl7Version.V2_8);
         assertThat(message.get("MSH.12")).isEqualTo("2.8");
         assertThat(message.get("PID.5.1")).isEqualTo("MARTINS");
     }
@@ -130,6 +131,7 @@ class Hl7VersionCompatibilityTest {
     void shouldParseVersion29() {
         Hl7Message message = parse("v29-adt.hl7");
 
+        assertThat(message.getVersion()).isEqualTo(Hl7Version.V2_9);
         assertThat(message.get("MSH.12")).isEqualTo("2.9");
         assertThat(message.get("PID.5.1")).isEqualTo("NUNES");
     }

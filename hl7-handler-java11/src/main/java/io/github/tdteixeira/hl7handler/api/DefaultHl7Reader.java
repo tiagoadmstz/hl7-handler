@@ -24,23 +24,13 @@ public class DefaultHl7Reader implements Hl7Reader {
 
     private String rawHl7;
     private Map<String, Object> mappingConfig;
+    private Hl7Message cachedMessage;
 
     private final Hl7ParserRegistry registry;
     private final YamlMappingLoader yamlLoader;
     private final Hl7ToMapTransformer transformer;
     private final Hl7JsonBinder jsonBinder;
     private final MllpStreamReader mllpReader;
-
-    /**
-    * Private constructor to prevent direct instantiation without dependencies.
-    */
-    private DefaultHl7Reader() {
-        this.registry = null;
-        this.yamlLoader = null;
-        this.transformer = null;
-        this.jsonBinder = null;
-        this.mllpReader = null;
-    }
 
     public DefaultHl7Reader(
         Hl7ParserRegistry registry,
@@ -49,22 +39,36 @@ public class DefaultHl7Reader implements Hl7Reader {
         Hl7JsonBinder jsonBinder,
         MllpStreamReader mllpReader
     ) {
+        this(registry, yamlLoader, transformer, jsonBinder, mllpReader, null);
+    }
+
+    public DefaultHl7Reader(
+        Hl7ParserRegistry registry,
+        YamlMappingLoader yamlLoader,
+        Hl7ToMapTransformer transformer,
+        Hl7JsonBinder jsonBinder,
+        MllpStreamReader mllpReader,
+        Map<String, Object> initialMappingConfig
+    ) {
         this.registry = registry;
         this.yamlLoader = yamlLoader;
         this.transformer = transformer;
         this.jsonBinder = jsonBinder;
         this.mllpReader = mllpReader;
+        this.mappingConfig = initialMappingConfig;
     }
 
     @Override
     public Hl7Reader from(String hl7Text) {
         this.rawHl7 = hl7Text;
+        this.cachedMessage = null;
         return this;
     }
 
     @Override
     public Hl7Reader fromBytes(byte[] bytes) {
         this.rawHl7 = mllpReader.fromBytes(bytes);
+        this.cachedMessage = null;
         return this;
     }
 
@@ -72,6 +76,7 @@ public class DefaultHl7Reader implements Hl7Reader {
     public Hl7Reader fromMllp(InputStream inputStream) {
         try {
             this.rawHl7 = mllpReader.readMessage(inputStream);
+            this.cachedMessage = null;
             return this;
         } catch (IOException e) {
             throw new UncheckedIOException("Error reading MLLP byte stream", e);
@@ -119,13 +124,23 @@ public class DefaultHl7Reader implements Hl7Reader {
     }
 
     @Override
+    public Hl7Reader withMapping(Map<String, Object> mappingConfig) {
+        this.mappingConfig = mappingConfig;
+        return this;
+    }
+
+    @Override
     public Hl7Message toMessage() {
+        if (cachedMessage != null) {
+            return cachedMessage;
+        }
         if (rawHl7 == null || rawHl7.trim().isEmpty()) {
             throw new IllegalStateException("HL7 input content must be provided via from(), fromBytes() or fromMllp()");
         }
         Hl7Version version = Hl7VersionDetector.detect(rawHl7);
         Hl7Parser parser = registry.getParserFor(version);
-        return parser.parse(rawHl7);
+        this.cachedMessage = parser.parse(rawHl7, version);
+        return this.cachedMessage;
     }
 
     @Override
