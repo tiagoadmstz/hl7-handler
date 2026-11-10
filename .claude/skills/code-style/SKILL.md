@@ -50,8 +50,9 @@ Cada módulo tem código próprio. A mudança é escrita no `hl7-handler-core` e
 - **Sem nome qualificado no corpo** (`io.github...Classe.metodo()`): usar `import`. Sem imports não usados.
 - **Sem import com asterisco** (`import pacote.*;` nem `import static Classe.*;`): importar só o tipo ou membro usado, um por linha. Vale para `src/main` e `src/test` dos três módulos, inclusive para tipos do próprio projeto (`model.Hl7Field`, `model.Hl7Segment`...).
   - `import module` (Java 25) só onde o `release` é 25, ou seja, nos exemplos. Nos três módulos da biblioteca (17, 11 e 8) ele não compila: lá, import explícito.
+  - Nos exemplos, tipos da JDK vêm de `import module java.base;` (logo após o `package`), sem `import java.*` avulso. Spring, Jakarta e hl7-handler ficam com import explícito: os exemplos rodam no classpath, e o `import module` só enxerga módulos do module path.
   - A IDE não pode recolher imports em `*`: o `.editorconfig` já fixa o limite em 999 para o IntelliJ. Em outra IDE, desligar o "import on demand".
-  - O build barra: Checkstyle `AvoidStarImport` na fase `validate`, em todos os módulos e nos testes. É o Checkstyle 9.3, o último que roda com o Maven em Java 8; ele não lê `module-info.java` (excluído) nem `import module`.
+  - O build barra: Checkstyle `AvoidStarImport` na fase `validate`, em todos os módulos e nos testes. Na biblioteca é o Checkstyle 9.3, o último que roda com o Maven em Java 8; ele não lê `module-info.java` (excluído) nem `import module`. Os exemplos sobrescrevem `checkstyle.version` com uma versão que lê Java 25.
 - **JSON só por Jackson:** nunca montar JSON concatenando `String` ou com `StringBuilder`; serializar um `Map` ou um VO. Vale também para corpo de erro em exemplos.
 - **Imutabilidade:** campos `final`, coleções expostas como `Collections.unmodifiableList(...)`, cópia defensiva no construtor (padrão de `Hl7Segment`/`Hl7Field`).
 - **Índices HL7 são 1-based** na API pública (`getField(3)` = PID-3); converter para 0-based só dentro do método.
