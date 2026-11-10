@@ -1,5 +1,7 @@
 package io.github.tdteixeira.hl7handler.example.pure;
 
+import module java.base;
+
 import io.github.tdteixeira.hl7handler.Hl7Handler;
 import io.github.tdteixeira.hl7handler.example.stub.Hl7MockData;
 import io.github.tdteixeira.hl7handler.example.stub.model.PacienteVO;
@@ -7,10 +9,6 @@ import io.github.tdteixeira.hl7handler.example.stub.model.ResultadoExameVO;
 import io.github.tdteixeira.hl7handler.example.stub.server.MockMllpServer;
 import io.github.tdteixeira.hl7handler.model.Hl7Message;
 import io.github.tdteixeira.hl7handler.model.Hl7Version;
-
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Socket;
 
 public class PureJavaExample {
 

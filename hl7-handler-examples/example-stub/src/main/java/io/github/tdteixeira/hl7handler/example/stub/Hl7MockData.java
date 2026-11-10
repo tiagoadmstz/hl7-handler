@@ -1,10 +1,8 @@
 package io.github.tdteixeira.hl7handler.example.stub;
 
-import io.github.tdteixeira.hl7handler.Hl7Handler;
+import module java.base;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import io.github.tdteixeira.hl7handler.Hl7Handler;
 
 /**
  * Mock data provider containing simulated HL7 messages for hospital admissions,

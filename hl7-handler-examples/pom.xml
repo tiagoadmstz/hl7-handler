@@ -16,6 +16,10 @@
     <name>HL7 Handler Examples</name>
     <description>Demonstration implementations using Pure Java, Spring Boot, and Quarkus.</description>
 
+    <properties>
+        <checkstyle.version>14.3.0</checkstyle.version>
+    </properties>
+
     <modules>
         <module>example-stub</module>
         <module>example-pure-java</module>

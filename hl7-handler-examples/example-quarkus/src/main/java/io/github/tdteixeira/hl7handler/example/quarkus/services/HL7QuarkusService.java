@@ -1,10 +1,10 @@
 package io.github.tdteixeira.hl7handler.example.quarkus.services;
 
+import module java.base;
+
 import io.github.tdteixeira.hl7handler.Hl7Handler;
 import io.github.tdteixeira.hl7handler.api.Hl7Reader;
 import jakarta.enterprise.context.ApplicationScoped;
-
-import java.io.InputStream;
 
 @ApplicationScoped
 public class HL7QuarkusService {

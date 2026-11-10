@@ -1,17 +1,10 @@
 package io.github.tdteixeira.hl7handler.example.stub.server;
 
+import module java.base;
+
 import io.github.tdteixeira.hl7handler.Hl7Handler;
 import io.github.tdteixeira.hl7handler.model.Hl7Message;
 import io.github.tdteixeira.hl7handler.network.MllpStreamReader;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Embedded Mock MLLP TCP Server for testing network HL7 integration.

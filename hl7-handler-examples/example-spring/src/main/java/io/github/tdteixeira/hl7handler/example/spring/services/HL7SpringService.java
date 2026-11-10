@@ -1,6 +1,6 @@
 package io.github.tdteixeira.hl7handler.example.spring.services;
 
-import java.io.InputStream;
+import module java.base;
 
 import org.springframework.stereotype.Service;
 
