@@ -9,18 +9,28 @@ import java.util.List;
  */
 public class Hl7Field {
 
+    private final char componentSeparator;
     private final List<List<Hl7Component>> repetitions;
 
     public Hl7Field() {
-        this.repetitions = new ArrayList<>();
+        this('^', new ArrayList<List<Hl7Component>>());
     }
 
     public Hl7Field(List<List<Hl7Component>> repetitions) {
-        this.repetitions = repetitions != null ? new ArrayList<>(repetitions) : new ArrayList<>();
+        this('^', repetitions);
+    }
+
+    public Hl7Field(char componentSeparator, List<List<Hl7Component>> repetitions) {
+        this.componentSeparator = componentSeparator;
+        this.repetitions = repetitions != null ? new ArrayList<List<Hl7Component>>(repetitions) : new ArrayList<List<Hl7Component>>();
+    }
+
+    public char getComponentSeparator() {
+        return componentSeparator;
     }
 
     public void addRepetition(List<Hl7Component> components) {
-        this.repetitions.add(components != null ? new ArrayList<>(components) : new ArrayList<>());
+        this.repetitions.add(components != null ? new ArrayList<Hl7Component>(components) : new ArrayList<Hl7Component>());
     }
 
     public List<List<Hl7Component>> getRepetitions() {
@@ -46,14 +56,14 @@ public class Hl7Field {
     }
 
     /**
-     * Returns the raw or joined value of the first repetition.
+     * Returns the joined value of the first repetition.
      */
     public String getValue() {
         return getValue(1);
     }
 
     /**
-     * Returns value of a specific repetition.
+     * Returns the joined value of a specific 1-based repetition.
      */
     public String getValue(int repetition1Based) {
         List<Hl7Component> comps = getComponents(repetition1Based);
@@ -65,10 +75,47 @@ public class Hl7Field {
         }
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < comps.size(); i++) {
-            if (i > 0) sb.append('^');
+            if (i > 0) {
+                sb.append(componentSeparator);
+            }
             sb.append(comps.get(i).getValue());
         }
         return sb.toString();
+    }
+
+    /**
+     * Returns the raw (escaped) joined value of a specific 1-based repetition.
+     */
+    public String getRawValue(int repetition1Based) {
+        List<Hl7Component> comps = getComponents(repetition1Based);
+        if (comps.isEmpty()) {
+            return "";
+        }
+        if (comps.size() == 1) {
+            return comps.get(0).getRawValue();
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < comps.size(); i++) {
+            if (i > 0) {
+                sb.append(componentSeparator);
+            }
+            sb.append(comps.get(i).getRawValue());
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Returns the decoded values of all repetitions as a list.
+     */
+    public List<String> getValues() {
+        if (repetitions.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<String> values = new ArrayList<String>(repetitions.size());
+        for (int i = 1; i <= repetitions.size(); i++) {
+            values.add(getValue(i));
+        }
+        return Collections.unmodifiableList(values);
     }
 
     /**

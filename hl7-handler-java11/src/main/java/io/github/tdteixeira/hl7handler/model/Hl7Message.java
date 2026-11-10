@@ -37,7 +37,9 @@ public class Hl7Message {
      * Finds the first segment matching the given name (case-insensitive).
      */
     public Optional<Hl7Segment> getSegment(String segmentName) {
-        if (segmentName == null) return Optional.empty();
+        if (segmentName == null) {
+            return Optional.empty();
+        }
         return segments.stream()
                 .filter(s -> s.getName().equalsIgnoreCase(segmentName.trim()))
                 .findFirst();
@@ -47,65 +49,82 @@ public class Hl7Message {
      * Finds all segments matching the given name.
      */
     public List<Hl7Segment> getSegments(String segmentName) {
-        if (segmentName == null) return Collections.emptyList();
+        if (segmentName == null) {
+            return Collections.emptyList();
+        }
         return segments.stream()
                 .filter(s -> s.getName().equalsIgnoreCase(segmentName.trim()))
                 .collect(Collectors.toList());
     }
 
     /**
-     * Resolves a coordinate path like "PID.5.1" or "MSH.9" or "OBX[1].5".
+     * Resolves a coordinate path like "PID.5.1", "PID-5.1", "PID.3[2].1", "OBX[2].5" or "PID".
      */
     public String get(String path) {
         if (path == null || path.trim().isEmpty()) {
             return "";
         }
 
-        String[] parts = path.trim().split("\\.");
-        if (parts.length == 0) return "";
+        String normalized = path.trim().replace('-', '.');
+        String[] parts = normalized.split("\\.");
+        if (parts.length == 0) {
+            return "";
+        }
 
         String segPart = parts[0];
-        int segmentIndex = 0;
+        int segmentIndex = 1;
 
-        // Check for indexed segment like OBX[1] (1-based index)
         if (segPart.contains("[") && segPart.endsWith("]")) {
             int openIdx = segPart.indexOf('[');
             String idxStr = segPart.substring(openIdx + 1, segPart.length() - 1);
             segPart = segPart.substring(0, openIdx);
             try {
-                segmentIndex = Math.max(0, Integer.parseInt(idxStr) - 1);
-            } catch (NumberFormatException ignored) {}
+                segmentIndex = Math.max(1, Integer.parseInt(idxStr));
+            } catch (NumberFormatException ignored) {
+                return "";
+            }
         }
 
         List<Hl7Segment> matched = getSegments(segPart);
-        if (segmentIndex >= matched.size()) {
+        if (segmentIndex < 1 || segmentIndex > matched.size()) {
             return "";
         }
-        Hl7Segment seg = matched.get(segmentIndex);
+        Hl7Segment seg = matched.get(segmentIndex - 1);
 
         if (parts.length == 1) {
-            return seg.toString();
+            return seg.toRawString(delimiters);
         }
 
         try {
-            int fieldIndex = Integer.parseInt(parts[1]);
+            String fieldPart = parts[1];
+            int fieldIndex;
+            int repIndex = 1;
+
+            if (fieldPart.contains("[") && fieldPart.endsWith("]")) {
+                int open = fieldPart.indexOf('[');
+                repIndex = Math.max(1, Integer.parseInt(fieldPart.substring(open + 1, fieldPart.length() - 1)));
+                fieldIndex = Integer.parseInt(fieldPart.substring(0, open));
+            } else {
+                fieldIndex = Integer.parseInt(fieldPart);
+            }
+
             if (parts.length == 2) {
-                return seg.getFieldValue(fieldIndex);
+                return seg.getFieldValue(fieldIndex, repIndex);
             }
 
             int componentIndex = Integer.parseInt(parts[2]);
             if (parts.length == 3) {
-                return seg.getComponentValue(fieldIndex, componentIndex);
+                return seg.getComponentValue(fieldIndex, repIndex, componentIndex);
             }
 
             int subcomponentIndex = Integer.parseInt(parts[3]);
             Hl7Field field = seg.getField(fieldIndex);
-            List<Hl7Component> comps = field.getComponents();
+            List<Hl7Component> comps = field.getComponents(repIndex);
             int cIdx = componentIndex - 1;
             if (cIdx >= 0 && cIdx < comps.size()) {
                 return comps.get(cIdx).getSubcomponent(subcomponentIndex);
             }
-        } catch (NumberFormatException ignored) {
+        } catch (Exception ignored) {
             return "";
         }
 

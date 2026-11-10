@@ -59,10 +59,14 @@ public class Hl7JsonBinder {
             Map<String, Object> sMap = new LinkedHashMap<>();
             sMap.put("segment", seg.getName());
 
-            List<Object> fieldVals = new ArrayList<>();
-            seg.getFields().stream()
-                .map(Hl7Field::getValue)
-                .forEach(fieldVals::add);
+            List<Object> fieldVals = new ArrayList<Object>();
+            for (Hl7Field field : seg.getFields()) {
+                if (field.getRepetitions().size() > 1) {
+                    fieldVals.add(field.getValues());
+                } else {
+                    fieldVals.add(field.getValue());
+                }
+            }
             sMap.put("fields", fieldVals);
             segList.add(sMap);
         }

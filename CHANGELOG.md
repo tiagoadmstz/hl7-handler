@@ -8,6 +8,11 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [Não Lançado]
 
 ### Adicionado
+- Suporte a delimitadores reais e dinâmicos em `Hl7Delimiters.fromMshHeader`, suportando MSH-2 de 2 a 5 caracteres (inclusive caractere de truncamento da 2.7+)
+- Tratamento e roundtrip de sequências de escape HL7 (`\F\`, `\S\`, `\T\`, `\R\`, `\E\`, `\Xhh\`, `\.br\`) via `Hl7Escapes`, preservando sequências de destaque e customizadas
+- Preservação de repetições de campo em `Hl7Field`, `Hl7Writer` e exposição em lista no `toRawJson`
+- `Hl7Message.get("PID")` serializando e devolvendo o segmento bruto
+- Navegação por caminhos com notação de hífen (`PID-3.1`), repetições (`PID.3[2].1`) e ocorrência de segmento (`OBX[2].5`)
 - Suporte inicial para HL7 v2.5
 - Detecção automática de versão via `MSH-12`
 - Leitor/gravador com protocolo MLLP (`network` module)
@@ -23,6 +28,10 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - `hl7-handler-core` passa a exigir Java 17 (antes 25) e usa Jackson 3
 - Build com JDK 25 via Maven Toolchains; testes rodam em JDK 8, 11, 17 e 25
 - Nos artefatos de Java 8 e 11, `Hl7Delimiters` é uma classe final (no core continua `record`)
+
+### Consertado
+- `fromMshHeader` não invade campos subsequentes com MSH-2 curto
+- Eliminação de delimitadores fixos (`&` e `^`) no parser e modelo
 
 ### Removido
 - Dependências não usadas `commons-lang3` e `commons-collections4`
@@ -75,6 +84,10 @@ Exemplo: `1.2.3` = MAJOR 1, MINOR 2, PATCH 3
 
 ### Descontinuado
 - Classe Z será removida em v3.0.0
+
+### Consertado
+- `fromMshHeader` não invade campos subsequentes com MSH-2 curto
+- Eliminação de delimitadores fixos (`&` e `^`) no parser e modelo
 
 ### Removido
 - Suporte para Java < 21

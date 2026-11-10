@@ -8,23 +8,47 @@ public record Hl7Delimiters(
         char componentSeparator,
         char repetitionSeparator,
         char escapeCharacter,
-        char subcomponentSeparator
+        char subcomponentSeparator,
+        Character truncationCharacter
 ) {
-    public static final Hl7Delimiters DEFAULT = new Hl7Delimiters('|', '^', '~', '\\', '&');
+    public static final Hl7Delimiters DEFAULT = new Hl7Delimiters('|', '^', '~', '\\', '&', null);
 
+    public Hl7Delimiters(char fieldSeparator, char componentSeparator, char repetitionSeparator, char escapeCharacter, char subcomponentSeparator) {
+        this(fieldSeparator, componentSeparator, repetitionSeparator, escapeCharacter, subcomponentSeparator, null);
+    }
+
+    /**
+     * Extracts delimiters from the MSH header.
+     * Accurately parses MSH-2 from 2 up to 5 characters (5th being truncation in v2.7+).
+     */
     public static Hl7Delimiters fromMshHeader(String mshHeader) {
-        if (mshHeader == null || mshHeader.length() < 8) {
+        if (mshHeader == null || mshHeader.length() < 4 || !mshHeader.startsWith("MSH")) {
             return DEFAULT;
         }
 
-        // MSH|^~\&|...
-        // char 3 is field separator (usually '|')
         char field = mshHeader.charAt(3);
-        char comp = mshHeader.length() > 4 ? mshHeader.charAt(4) : '^';
-        char rep = mshHeader.length() > 5 ? mshHeader.charAt(5) : '~';
-        char esc = mshHeader.length() > 6 ? mshHeader.charAt(6) : '\\';
-        char sub = mshHeader.length() > 7 ? mshHeader.charAt(7) : '&';
+        int end = mshHeader.length();
+        int nextField = mshHeader.indexOf(field, 4);
+        if (nextField != -1) {
+            end = nextField;
+        }
 
-        return new Hl7Delimiters(field, comp, rep, esc, sub);
+        int cr = mshHeader.indexOf('\r', 4);
+        int lf = mshHeader.indexOf('\n', 4);
+        if (cr != -1 && cr < end) {
+            end = cr;
+        }
+        if (lf != -1 && lf < end) {
+            end = lf;
+        }
+
+        String msh2 = mshHeader.substring(4, end);
+        char comp = msh2.length() > 0 ? msh2.charAt(0) : '^';
+        char rep = msh2.length() > 1 ? msh2.charAt(1) : '~';
+        char esc = msh2.length() > 2 ? msh2.charAt(2) : '\\';
+        char sub = msh2.length() > 3 ? msh2.charAt(3) : '&';
+        Character trunc = msh2.length() > 4 ? msh2.charAt(4) : null;
+
+        return new Hl7Delimiters(field, comp, rep, esc, sub, trunc);
     }
 }

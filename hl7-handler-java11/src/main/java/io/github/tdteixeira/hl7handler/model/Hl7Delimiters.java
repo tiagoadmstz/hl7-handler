@@ -7,13 +7,14 @@ import java.util.Objects;
  */
 public final class Hl7Delimiters {
 
-    public static final Hl7Delimiters DEFAULT = new Hl7Delimiters('|', '^', '~', '\\', '&');
+    public static final Hl7Delimiters DEFAULT = new Hl7Delimiters('|', '^', '~', '\\', '&', null);
 
     private final char fieldSeparator;
     private final char componentSeparator;
     private final char repetitionSeparator;
     private final char escapeCharacter;
     private final char subcomponentSeparator;
+    private final Character truncationCharacter;
 
     public Hl7Delimiters(
             char fieldSeparator,
@@ -22,27 +23,54 @@ public final class Hl7Delimiters {
             char escapeCharacter,
             char subcomponentSeparator
     ) {
+        this(fieldSeparator, componentSeparator, repetitionSeparator, escapeCharacter, subcomponentSeparator, null);
+    }
+
+    public Hl7Delimiters(
+            char fieldSeparator,
+            char componentSeparator,
+            char repetitionSeparator,
+            char escapeCharacter,
+            char subcomponentSeparator,
+            Character truncationCharacter
+    ) {
         this.fieldSeparator = fieldSeparator;
         this.componentSeparator = componentSeparator;
         this.repetitionSeparator = repetitionSeparator;
         this.escapeCharacter = escapeCharacter;
         this.subcomponentSeparator = subcomponentSeparator;
+        this.truncationCharacter = truncationCharacter;
     }
 
     public static Hl7Delimiters fromMshHeader(String mshHeader) {
-        if (mshHeader == null || mshHeader.length() < 8) {
+        if (mshHeader == null || mshHeader.length() < 4 || !mshHeader.startsWith("MSH")) {
             return DEFAULT;
         }
 
-        // MSH|^~\&|...
-        // char 3 is field separator (usually '|')
         char field = mshHeader.charAt(3);
-        char comp = mshHeader.length() > 4 ? mshHeader.charAt(4) : '^';
-        char rep = mshHeader.length() > 5 ? mshHeader.charAt(5) : '~';
-        char esc = mshHeader.length() > 6 ? mshHeader.charAt(6) : '\\';
-        char sub = mshHeader.length() > 7 ? mshHeader.charAt(7) : '&';
+        int end = mshHeader.length();
+        int nextField = mshHeader.indexOf(field, 4);
+        if (nextField != -1) {
+            end = nextField;
+        }
 
-        return new Hl7Delimiters(field, comp, rep, esc, sub);
+        int cr = mshHeader.indexOf('\r', 4);
+        int lf = mshHeader.indexOf('\n', 4);
+        if (cr != -1 && cr < end) {
+            end = cr;
+        }
+        if (lf != -1 && lf < end) {
+            end = lf;
+        }
+
+        String msh2 = mshHeader.substring(4, end);
+        char comp = msh2.length() > 0 ? msh2.charAt(0) : '^';
+        char rep = msh2.length() > 1 ? msh2.charAt(1) : '~';
+        char esc = msh2.length() > 2 ? msh2.charAt(2) : '\\';
+        char sub = msh2.length() > 3 ? msh2.charAt(3) : '&';
+        Character trunc = msh2.length() > 4 ? msh2.charAt(4) : null;
+
+        return new Hl7Delimiters(field, comp, rep, esc, sub, trunc);
     }
 
     public char fieldSeparator() {
@@ -65,6 +93,10 @@ public final class Hl7Delimiters {
         return subcomponentSeparator;
     }
 
+    public Character truncationCharacter() {
+        return truncationCharacter;
+    }
+
     @Override
     public boolean equals(Object other) {
         if (this == other) {
@@ -78,12 +110,13 @@ public final class Hl7Delimiters {
                 && componentSeparator == that.componentSeparator
                 && repetitionSeparator == that.repetitionSeparator
                 && escapeCharacter == that.escapeCharacter
-                && subcomponentSeparator == that.subcomponentSeparator;
+                && subcomponentSeparator == that.subcomponentSeparator
+                && Objects.equals(truncationCharacter, that.truncationCharacter);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(fieldSeparator, componentSeparator, repetitionSeparator, escapeCharacter, subcomponentSeparator);
+        return Objects.hash(fieldSeparator, componentSeparator, repetitionSeparator, escapeCharacter, subcomponentSeparator, truncationCharacter);
     }
 
     @Override
@@ -92,6 +125,7 @@ public final class Hl7Delimiters {
                 + ", componentSeparator=" + componentSeparator
                 + ", repetitionSeparator=" + repetitionSeparator
                 + ", escapeCharacter=" + escapeCharacter
-                + ", subcomponentSeparator=" + subcomponentSeparator + "]";
+                + ", subcomponentSeparator=" + subcomponentSeparator
+                + ", truncationCharacter=" + truncationCharacter + "]";
     }
 }
