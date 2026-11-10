@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.tdteixeira.hl7handler</groupId>
+        <artifactId>hl7-handler-parent</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>hl7-handler-examples</artifactId>
+    <packaging>pom</packaging>
+
+    <name>HL7 Handler Examples</name>
+    <description>Demonstration implementations using Pure Java, Spring Boot, and Quarkus.</description>
+
+    <modules>
+        <module>example-stub</module>
+        <module>example-pure-java</module>
+        <module>example-spring</module>
+        <module>example-quarkus</module>
+    </modules>
+</project>

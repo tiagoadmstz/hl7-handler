@@ -1,0 +1,12 @@
+version: "2.5"
+description: "Mapeamento compartilhado de Resultado Laboratorial (ORU_R01)"
+mappings:
+  idMensagem: "MSH.10"
+  prontuario: "PID.3.1"
+  nomePaciente: "PID.5.1"
+  codigoExame: "OBX.3.1"
+  descricaoExame: "OBX.3.2"
+  valor: "OBX.5"
+  unidade: "OBX.6"
+  intervaloReferencia: "OBX.7"
+  interpretacao: "OBX.8"
