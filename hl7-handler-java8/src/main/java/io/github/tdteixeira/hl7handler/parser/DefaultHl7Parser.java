@@ -1,6 +1,11 @@
 package io.github.tdteixeira.hl7handler.parser;
 
-import io.github.tdteixeira.hl7handler.model.*;
+import io.github.tdteixeira.hl7handler.model.Hl7Component;
+import io.github.tdteixeira.hl7handler.model.Hl7Delimiters;
+import io.github.tdteixeira.hl7handler.model.Hl7Field;
+import io.github.tdteixeira.hl7handler.model.Hl7Message;
+import io.github.tdteixeira.hl7handler.model.Hl7Segment;
+import io.github.tdteixeira.hl7handler.model.Hl7Version;
 
 import java.util.ArrayList;
 import java.util.Arrays;

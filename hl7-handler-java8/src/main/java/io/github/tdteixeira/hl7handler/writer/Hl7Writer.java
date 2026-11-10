@@ -1,8 +1,10 @@
 package io.github.tdteixeira.hl7handler.writer;
 
-import io.github.tdteixeira.hl7handler.model.*;
+import io.github.tdteixeira.hl7handler.model.Hl7Delimiters;
+import io.github.tdteixeira.hl7handler.model.Hl7Field;
+import io.github.tdteixeira.hl7handler.model.Hl7Message;
+import io.github.tdteixeira.hl7handler.model.Hl7Segment;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
