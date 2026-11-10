@@ -3,18 +3,15 @@ package io.github.tdteixeira.hl7handler.network;
 import io.github.tdteixeira.hl7handler.model.Hl7Delimiters;
 import io.github.tdteixeira.hl7handler.model.Hl7Message;
 import io.github.tdteixeira.hl7handler.model.Hl7Version;
-import io.github.tdteixeira.hl7handler.model.Hl7VersionProfile;
+import io.github.tdteixeira.hl7handler.version.Hl7VersionStrategy;
+import io.github.tdteixeira.hl7handler.version.Hl7VersionStrategyRegistry;
 
 import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
 
 /**
  * Generates version-aware HL7 v2 ACK (Acknowledgment) messages.
  */
 public final class Hl7AckGenerator {
-
-    private static final DateTimeFormatter TS_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmssZ");
-    private static final DateTimeFormatter DTM_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss.SSSSZ");
 
     private Hl7AckGenerator() {
     }
@@ -58,30 +55,22 @@ public final class Hl7AckGenerator {
 
         OffsetDateTime now = OffsetDateTime.now();
         Hl7Version version = incomingMessage.getVersion();
-        Hl7VersionProfile profile = Hl7VersionProfile.profileFor(version);
-        String timestamp;
-        if ("DTM".equalsIgnoreCase(profile.getDateType())) {
-            timestamp = now.format(DTM_FORMATTER);
-        } else {
-            timestamp = now.format(TS_FORMATTER);
-        }
+        Hl7VersionStrategy strategy = Hl7VersionStrategyRegistry.findStrategy(version);
+        String timestamp = strategy.formatHeaderTimestamp(now);
 
-        String event = incomingMessage.get("MSH.9.2");
-        if (event.isEmpty()) {
+        String eventCoordinate = strategy.getDefaultEventCoordinate();
+        String event = incomingMessage.get(eventCoordinate);
+        if (event.isEmpty() && !"MSH.9.2".equals(eventCoordinate)) {
+            event = incomingMessage.get("MSH.9.2");
+        }
+        if (event.isEmpty() && !"EVN.1".equals(eventCoordinate)) {
             event = incomingMessage.get("EVN.1");
         }
         if (event.isEmpty()) {
             event = "R01";
         }
 
-        String messageType;
-        if ("MSG".equalsIgnoreCase(profile.getMsh9Format())) {
-            messageType = "ACK";
-        } else if ("MSG_EVENT".equalsIgnoreCase(profile.getMsh9Format())) {
-            messageType = "ACK" + cs + event;
-        } else {
-            messageType = "ACK" + cs + event + cs + "ACK";
-        }
+        String messageType = strategy.formatMsh9(event, cs);
 
         String incomingControlId = incomingMessage.get("MSH.10");
         String ackControlId = "ACK-" + (incomingControlId.isEmpty() ? now.toEpochSecond() : incomingControlId);
@@ -98,7 +87,7 @@ public final class Hl7AckGenerator {
            .append(delims.repetitionSeparator())
            .append(delims.escapeCharacter())
            .append(delims.subcomponentSeparator());
-        if (delims.truncationCharacter() != null) {
+        if (strategy.isTruncationSupported() && delims.truncationCharacter() != null) {
             msh.append(delims.truncationCharacter());
         }
 
@@ -113,7 +102,7 @@ public final class Hl7AckGenerator {
         msh.append(fs).append(processingId);
         msh.append(fs).append(rawVersion);
 
-        if (!charset.isEmpty()) {
+        if (strategy.isMsh18Supported() && !charset.isEmpty()) {
             // Fill fields up to MSH-18
             for (int i = 13; i <= 17; i++) {
                 msh.append(fs);

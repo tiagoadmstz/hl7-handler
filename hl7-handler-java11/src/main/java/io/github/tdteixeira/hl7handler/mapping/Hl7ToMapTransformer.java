@@ -1,6 +1,8 @@
 package io.github.tdteixeira.hl7handler.mapping;
 
 import io.github.tdteixeira.hl7handler.model.Hl7Message;
+import io.github.tdteixeira.hl7handler.version.Hl7VersionStrategy;
+import io.github.tdteixeira.hl7handler.version.Hl7VersionStrategyRegistry;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -43,8 +45,18 @@ public class Hl7ToMapTransformer {
             if (val instanceof Map<?, ?>) {
                 result.put(key, processMap(message, (Map<String, Object>) val));
             } else if (val instanceof String) {
-                // Leaf node containing HL7 path, e.g. "PID.5.1"
-                String extracted = message.get((String) val);
+                // Leaf node containing HL7 path, e.g. "PID.5.1" or semantic coordinate "@event" / "@patientId"
+                String pathStr = (String) val;
+                String extracted = message.get(pathStr);
+                if (extracted.isEmpty()) {
+                    if ("@event".equalsIgnoreCase(pathStr) || "EVENT".equalsIgnoreCase(pathStr)) {
+                        Hl7VersionStrategy strategy = Hl7VersionStrategyRegistry.findStrategy(message.getVersion());
+                        extracted = message.get(strategy.getDefaultEventCoordinate());
+                    } else if ("@patientId".equalsIgnoreCase(pathStr) || "PATIENT_ID".equalsIgnoreCase(pathStr)) {
+                        Hl7VersionStrategy strategy = Hl7VersionStrategyRegistry.findStrategy(message.getVersion());
+                        extracted = message.get(strategy.getDefaultPatientIdCoordinate());
+                    }
+                }
                 result.put(key, extracted);
             } else {
                 result.put(key, val);

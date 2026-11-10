@@ -1,5 +1,7 @@
 package io.github.tdteixeira.hl7handler.model;
 
+import io.github.tdteixeira.hl7handler.version.Hl7VersionStrategyRegistry;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -113,26 +115,26 @@ public final class Hl7VersionProfile {
     }
 
     /**
-     * Resolves the profile for the given version.
-     * Looks for an exact match; if not found, selects the nearest known lower version (e.g. 2.9 falls back to 2.8).
+     * Resolves the profile directly from loaded properties without registry lookup.
+     * Used by strategy instances to initialize their profile.
      */
-    public static Hl7VersionProfile profileFor(Hl7Version version) {
-        if (version == null || version.isUnknown()) {
-            Hl7VersionProfile defaultProfile = PROFILES.get(Hl7Version.V2_1);
-            return defaultProfile != null ? defaultProfile : createDefaultFallback(Hl7Version.V2_1);
+    public static Hl7VersionProfile getDirectProfile(Hl7Version version) {
+        if (version == null) {
+            return createDefaultFallback(Hl7Version.UNKNOWN);
         }
-
         Hl7VersionProfile exact = PROFILES.get(version);
         if (exact != null) {
             return exact;
         }
+        return createDefaultFallback(version);
+    }
 
-        Map.Entry<Hl7Version, Hl7VersionProfile> floor = PROFILES.floorEntry(version);
-        if (floor != null) {
-            return floor.getValue();
-        }
-
-        return PROFILES.firstEntry() != null ? PROFILES.firstEntry().getValue() : createDefaultFallback(version);
+    /**
+     * Resolves the profile for the given version by delegating to the version strategy.
+     * Looks for an exact match; if not found, selects the nearest known lower version (e.g. 2.9 falls back to 2.8).
+     */
+    public static Hl7VersionProfile profileFor(Hl7Version version) {
+        return Hl7VersionStrategyRegistry.findStrategy(version).getProfile();
     }
 
     public boolean isFallbackFor(Hl7Version requestedVersion) {

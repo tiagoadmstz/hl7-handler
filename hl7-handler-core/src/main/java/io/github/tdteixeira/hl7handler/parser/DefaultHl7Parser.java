@@ -8,6 +8,8 @@ import io.github.tdteixeira.hl7handler.model.Hl7Message;
 import io.github.tdteixeira.hl7handler.model.Hl7Segment;
 import io.github.tdteixeira.hl7handler.model.Hl7Version;
 import io.github.tdteixeira.hl7handler.model.Hl7VersionProfile;
+import io.github.tdteixeira.hl7handler.version.Hl7VersionStrategy;
+import io.github.tdteixeira.hl7handler.version.Hl7VersionStrategyRegistry;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,13 +50,17 @@ public class DefaultHl7Parser implements Hl7Parser {
 
         Hl7Version version = detectedVersion != null ? detectedVersion : Hl7VersionDetector.detect(rawHl7);
         Hl7Delimiters delimiters = extractDelimiters(rawHl7);
-        Hl7VersionProfile profile = Hl7VersionProfile.profileFor(version);
+        Hl7VersionStrategy strategy = Hl7VersionStrategyRegistry.findStrategy(version);
+        Hl7VersionProfile profile = strategy.getProfile();
 
         List<String> warnings = new ArrayList<>();
         if (version.isUnknown()) {
             warnings.add("Unknown HL7 version detected; falling back to profile " + profile.getVersion().getIdentifier());
         } else if (profile.isFallbackFor(version)) {
             warnings.add("HL7 version " + version.getIdentifier() + " does not have an exact profile; falling back to profile " + profile.getVersion().getIdentifier());
+        }
+        if (delimiters.truncationCharacter() != null && !strategy.isTruncationSupported()) {
+            warnings.add("MSH-2 defines truncation character '" + delimiters.truncationCharacter() + "' which is not supported in HL7 version " + strategy.getVersion().getIdentifier());
         }
 
         String[] rawLines = rawHl7.split("\r\n|\r|\n");

@@ -8,6 +8,8 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [Não Lançado]
 
 ### Adicionado
+- Arquitetura Strategy Pattern por versão HL7 (`io.github.tdteixeira.hl7handler.version` e subpacotes `v21` a `v28`), desacoplando regras de MSH-9, MSH-18, truncamento MSH-2, timestamp de cabeçalho (TS/DTM) e coordenadas padrão de evento (`EVN.1`/`MSH.9.2`) e paciente (`PID.2.1`/`PID.3.1`) nos três módulos
+- `Hl7VersionStrategyRegistry` thread-safe para resolução exata, floor e baseline (v2.5) de estratégias de versão
 - `Hl7Version` transformada em tipo imutável aberto e comparável (`Comparable<Hl7Version>`), preservando versões como `2.9` e `2.8.2` sem forçá-las a `UNKNOWN`
 - `Hl7VersionProfile` carregado a partir de perfis em `resources/hl7/profiles/*.properties` (2.1 a 2.8) com fallback automático para o perfil mais próximo abaixo
 - Utilitário `Hl7DateTime` para interpretação robusta de timestamps HL7 `TS`/`DTM` com precisões variáveis e fusos horários (`OffsetDateTime`, `LocalDateTime`, `LocalDate`)
