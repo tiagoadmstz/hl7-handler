@@ -69,7 +69,7 @@ Se tiver uma ideia para uma nova funcionalidade:
 
 ### Desenvolvendo
 
-1. **Siga o estilo de código** do projeto (Java 25, clean code, SOLID)
+1. **Siga o estilo de código** do projeto (clean code, SOLID). Os três módulos são independentes: toda mudança é feita no `hl7-handler-core`, no `hl7-handler-java11` e no `hl7-handler-java8`, cada um na sintaxe do seu Java mínimo
 2. **Escreva testes** para novas funcionalidades
 3. **Atualize a documentação** se necessário
 4. **Execute testes localmente**:
