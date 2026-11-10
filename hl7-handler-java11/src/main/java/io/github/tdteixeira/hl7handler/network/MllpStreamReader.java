@@ -3,6 +3,7 @@ package io.github.tdteixeira.hl7handler.network;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PushbackInputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -10,12 +11,13 @@ import java.util.List;
 
 /**
  * Utility for reading and converting HL7 network byte streams,
- * supporting both MLLP (Minimal Lower Layer Protocol) framing and raw byte streams.
+ * supporting MLLP (Minimal Lower Layer Protocol) framing, charset detection,
+ * and message size protection.
  *
  * MLLP framing standard:
- * - Start Block (SB): 0x0B (Vertical Tab - <VT>)
- * - End Block (EB):   0x1C (File Separator - <FS>)
- * - Trailer:          0x0D (Carriage Return - <CR>)
+ * - Start Block (SB): 0x0B (Vertical Tab - &lt;VT&gt;)
+ * - End Block (EB):   0x1C (File Separator - &lt;FS&gt;)
+ * - Trailer:          0x0D (Carriage Return - &lt;CR&gt;)
  */
 public class MllpStreamReader {
 
@@ -23,64 +25,116 @@ public class MllpStreamReader {
     public static final byte END_BLOCK = 0x1C;
     public static final byte TRAILER = 0x0D;
 
-    private final Charset charset;
+    public static final int DEFAULT_MAX_MESSAGE_SIZE = 1024 * 1024; // 1 MB
+
+    private final Charset defaultCharset;
+    private final int maxMessageSize;
+    private final boolean requireFraming;
 
     public MllpStreamReader() {
-        this(StandardCharsets.UTF_8);
+        this(StandardCharsets.UTF_8, DEFAULT_MAX_MESSAGE_SIZE, true);
     }
 
-    public MllpStreamReader(Charset charset) {
-        this.charset = charset != null ? charset : StandardCharsets.UTF_8;
+    public MllpStreamReader(Charset defaultCharset) {
+        this(defaultCharset, DEFAULT_MAX_MESSAGE_SIZE, true);
+    }
+
+    public MllpStreamReader(Charset defaultCharset, int maxMessageSize, boolean requireFraming) {
+        this.defaultCharset = defaultCharset != null ? defaultCharset : StandardCharsets.UTF_8;
+        this.maxMessageSize = maxMessageSize > 0 ? maxMessageSize : DEFAULT_MAX_MESSAGE_SIZE;
+        this.requireFraming = requireFraming;
+    }
+
+    public Charset getDefaultCharset() {
+        return defaultCharset;
+    }
+
+    public int getMaxMessageSize() {
+        return maxMessageSize;
+    }
+
+    public boolean isRequireFraming() {
+        return requireFraming;
     }
 
     /**
      * Reads a single MLLP-framed HL7 message from an InputStream.
-     * Blocks until the end-of-block sequence is received or stream reaches EOF.
+     * Detects message character set from MSH-18 and enforces size limits.
      *
      * @param in the network input stream
-     * @return the HL7 message string without framing characters, or null if EOF before message
+     * @return the HL7 message string without framing characters, or null on clean EOF
+     * @throws MllpFramingException if framing is violated, truncated, or size limit exceeded
      * @throws IOException on I/O error
      */
     public String readMessage(InputStream in) throws IOException {
+        if (in == null) {
+            return null;
+        }
+
+        PushbackInputStream pbin = (in instanceof PushbackInputStream)
+                ? (PushbackInputStream) in
+                : new PushbackInputStream(in, 2);
+
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         int b;
         boolean inMessage = false;
 
-        while ((b = in.read()) != -1) {
+        while ((b = pbin.read()) != -1) {
             byte current = (byte) b;
 
             if (!inMessage) {
                 if (current == START_BLOCK) {
                     inMessage = true;
+                    continue;
                 }
-                // Ignore leading bytes before START_BLOCK
+
+                if (requireFraming) {
+                    throw new MllpFramingException(
+                            "Expected MLLP start block (0x0B), but found byte: 0x" + Integer.toHexString(b & 0xFF)
+                    );
+                }
+
+                inMessage = true;
+                buffer.write(current);
                 continue;
             }
 
-            // Message started, check for END_BLOCK
             if (current == END_BLOCK) {
-                // Next byte should be TRAILER (0x0D)
-                int next = in.read();
+                int next = pbin.read();
                 if (next != -1 && next != TRAILER) {
-                    // In some non-strict implementations, put back or include
-                    buffer.write(next);
+                    pbin.unread(next);
                 }
-                return buffer.toString(charset);
+
+                byte[] rawBytes = buffer.toByteArray();
+                Charset charset = Hl7Charsets.detectCharset(rawBytes, defaultCharset);
+                return new String(rawBytes, charset);
+            }
+
+            if (buffer.size() >= maxMessageSize) {
+                throw new MllpFramingException(
+                        "MLLP message size exceeded limit of " + maxMessageSize + " bytes"
+                );
             }
 
             buffer.write(current);
         }
 
-        // If stream ended and we captured content without formal MLLP frame, return it if not empty
+        if (inMessage && requireFraming) {
+            throw new MllpFramingException("Truncated MLLP frame: stream reached EOF before end block (0x1C)");
+        }
+
         if (buffer.size() > 0) {
-            return buffer.toString(charset);
+            byte[] rawBytes = buffer.toByteArray();
+            Charset charset = Hl7Charsets.detectCharset(rawBytes, defaultCharset);
+            return new String(rawBytes, charset);
         }
 
         return null;
     }
 
     /**
-     * Converts a raw byte array into an HL7 string, automatically stripping MLLP framing if present.
+     * Converts a raw byte array into an HL7 string, automatically stripping MLLP framing
+     * and detecting encoding from MSH-18.
      */
     public String fromBytes(byte[] bytes) {
         if (bytes == null || bytes.length == 0) {
@@ -90,12 +144,10 @@ public class MllpStreamReader {
         int start = 0;
         int end = bytes.length;
 
-        // Skip leading MLLP START_BLOCK if present
         while (start < end && bytes[start] == START_BLOCK) {
             start++;
         }
 
-        // Strip trailing END_BLOCK and TRAILER if present
         while (end > start && (bytes[end - 1] == TRAILER || bytes[end - 1] == END_BLOCK || bytes[end - 1] == 0x0A)) {
             end--;
         }
@@ -104,17 +156,21 @@ public class MllpStreamReader {
             return "";
         }
 
-        return new String(bytes, start, end - start, charset);
+        byte[] payload = new byte[end - start];
+        System.arraycopy(bytes, start, payload, 0, payload.length);
+        Charset charset = Hl7Charsets.detectCharset(payload, defaultCharset);
+        return new String(payload, charset);
     }
 
     /**
-     * Wraps an HL7 message string into standard MLLP framed byte array (e.g. for sending ACK responses).
+     * Wraps an HL7 message string into standard MLLP framed byte array using the detected or default encoding.
      */
     public byte[] wrap(String hl7Message) {
         if (hl7Message == null) {
             hl7Message = "";
         }
-        byte[] payload = hl7Message.getBytes(charset);
+
+        byte[] payload = hl7Message.getBytes(defaultCharset);
         byte[] framed = new byte[payload.length + 3];
 
         framed[0] = START_BLOCK;
@@ -130,8 +186,12 @@ public class MllpStreamReader {
      */
     public List<String> readAll(InputStream in) throws IOException {
         List<String> messages = new ArrayList<>();
+        PushbackInputStream pbin = (in instanceof PushbackInputStream)
+                ? (PushbackInputStream) in
+                : new PushbackInputStream(in, 2);
+
         String msg;
-        while ((msg = readMessage(in)) != null) {
+        while ((msg = readMessage(pbin)) != null) {
             if (!msg.trim().isEmpty()) {
                 messages.add(msg);
             }

@@ -7,6 +7,7 @@ import io.github.tdteixeira.hl7handler.mapping.Hl7ToMapTransformer;
 import io.github.tdteixeira.hl7handler.mapping.YamlMappingLoader;
 import io.github.tdteixeira.hl7handler.model.Hl7Message;
 import io.github.tdteixeira.hl7handler.model.Hl7Version;
+import io.github.tdteixeira.hl7handler.network.Hl7AckGenerator;
 import io.github.tdteixeira.hl7handler.network.MllpStreamReader;
 import io.github.tdteixeira.hl7handler.parser.Hl7ParserRegistry;
 import io.github.tdteixeira.hl7handler.parser.Hl7VersionDetector;
@@ -84,5 +85,19 @@ public final class Hl7Handler {
      */
     public static String toHl7(Hl7Message message) {
         return writer().write(message);
+    }
+
+    /**
+     * Generates a version-aware ACK (AA) response message for an incoming message.
+     */
+    public static String generateAck(Hl7Message message) {
+        return Hl7AckGenerator.generateAck(message);
+    }
+
+    /**
+     * Generates a version-aware ACK response message with explicit code and message text.
+     */
+    public static String generateAck(Hl7Message message, String ackCode, String textMessage) {
+        return Hl7AckGenerator.generateAck(message, ackCode, textMessage);
     }
 }

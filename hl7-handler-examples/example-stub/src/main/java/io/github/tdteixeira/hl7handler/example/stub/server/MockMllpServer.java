@@ -65,13 +65,8 @@ public class MockMllpServer implements AutoCloseable {
             String incomingHl7;
 
             while ((incomingHl7 = reader.readMessage(in)) != null) {
-                // Parse message to get message control ID
                 Hl7Message msg = Hl7Handler.reader().from(incomingHl7).toMessage();
-                String controlId = msg.get("MSH.10");
-
-                // Generate MLLP ACK response
-                String ack = "MSH|^~\\&|MOCK_HL7_SERVER|MOCK_HOSPITAL|SENDER|ORIGIN|20261109120000||ACK|ACK-" + controlId + "|P|2.5\r" +
-                             "MSA|AA|" + (controlId.isEmpty() ? "MSG001" : controlId) + "|Mensagem processada com sucesso\r";
+                String ack = Hl7Handler.generateAck(msg, "AA", "Mensagem processada com sucesso");
 
                 byte[] ackFrame = reader.wrap(ack);
                 out.write(ackFrame);

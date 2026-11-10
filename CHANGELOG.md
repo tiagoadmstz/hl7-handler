@@ -8,6 +8,10 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [Não Lançado]
 
 ### Adicionado
+- `MllpFramingException` para sinalização de violações de moldura MLLP (truncamento por EOF, stream sem 0x0B e limite de tamanho excedido)
+- Detecção automática de encoding da mensagem via `MSH-18` em `Hl7Charsets` (`ASCII`, `8859/1`, `8859/15`, `UNICODE`, `UTF-8`, `UTF-16`)
+- Gerador de confirmação HL7 ciente da versão em `Hl7AckGenerator`, ecoando `MSH-12`, invertendo `MSH-3/4` ↔ `MSH-5/6`, gerando `MSH-9` e timestamp conforme a versão
+- Suporte a pushback no `MllpStreamReader` para não perder mensagens em frames colados sem trailer `0x0D`
 - Suporte a delimitadores reais e dinâmicos em `Hl7Delimiters.fromMshHeader`, suportando MSH-2 de 2 a 5 caracteres (inclusive caractere de truncamento da 2.7+)
 - Tratamento e roundtrip de sequências de escape HL7 (`\F\`, `\S\`, `\T\`, `\R\`, `\E\`, `\Xhh\`, `\.br\`) via `Hl7Escapes`, preservando sequências de destaque e customizadas
 - Preservação de repetições de campo em `Hl7Field`, `Hl7Writer` e exposição em lista no `toRawJson`
