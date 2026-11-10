@@ -47,6 +47,8 @@ Rodar nas linhas adicionadas (`git diff <base>...HEAD -U0 | grep '^+'`):
 | `? .* ? ` na mesma expressão | Ternário aninhado |
 | `!\w+\.matches(` | Regex deve descrever o inválido |
 | `io\.github\.[a-z.]+\.[A-Z]` fora de `import`/`package` | Nome qualificado no corpo |
+| `^import .*\*;` | Import com asterisco |
+| `^import module` fora de `hl7-handler-examples` | `import module` em módulo sem Java 25 |
 | `"\{\\"` ou `StringBuilder` perto de JSON | JSON montado à mão |
 | `'\^'`, `"\^"`, `'&'`, `"&"`, `'~'` em parser/writer | Delimitador fixo no código |
 | `catch \(.*\) \{\s*\}` | `catch` vazio |
