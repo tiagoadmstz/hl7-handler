@@ -35,7 +35,7 @@ São três artefatos com **a mesma API pública** (pacote `io.github.tdteixeira.
   - `./mvnw install -Pexamples`: exemplos. Exige o Maven rodando em Java 17+; passar o `JAVA_HOME` só nesse comando.
 - No `hl7-handler-java11`, com o Maven em Java 8, o Maven não lê o `module-info` multi-release do Jackson 2. Por isso há `requires com.fasterxml.jackson.annotation` explícito e testes pelo classpath (`useModulePath=false`). O aviso "filename-based automodules" no build vem daí e é esperado.
 
-## Skills do projeto (`.claude/skills/`)
+## Skills do projeto (`.claude/skills/` e `.agents/skills/`)
 
 Ler a skill correspondente **antes** de agir, mesmo que ela não tenha sido carregada automaticamente:
 
@@ -44,6 +44,11 @@ Ler a skill correspondente **antes** de agir, mesmo que ela não tenha sido carr
 | Escrever ou alterar código, pom ou teste | `code-style` |
 | Revisar PR, branch, diff ou arquivos | `review-guidelines` (e também `code-style`) |
 | Abrir PR ou escrever descrição de PR/release | `pull-request` (template em `.github/pull_request_template.md`) |
+
+## Fluxo de trabalho com IA: Planejamento vs Execução
+
+- **Planejamento com modelo avançado:** Sempre realizar a análise de impacto, desenho da solução e elaboração do plano detalhado passo a passo utilizando um modelo/agente analítico mais avançado ("mais caro", ex: Claude Opus/Sonnet, Gemini Pro). Nunca iniciar a execução diretamente no código sem um plano estruturado e validado.
+- **Execução com modelo eficiente:** Após o plano estar claramente delineado, validado e dividido em etapas, utilizar um modelo/agente mais rápido e econômico ("mais barato", ex: Claude Haiku, Gemini Flash) para a implementação cirúrgica, geração de código, testes e checagens nos três módulos.
 
 ## Convenções
 

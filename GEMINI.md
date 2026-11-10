@@ -44,6 +44,11 @@ Localizadas em `.agents/skills/` (também espelhadas em `.claude/skills/`):
 - `review-guidelines` (`.agents/skills/review-guidelines/SKILL.md`): Checklist de revisão de PRs, diffs e paridade entre módulos.
 - `pull-request` (`.agents/skills/pull-request/SKILL.md`): Formato de título e descrição de PRs.
 
+## Fluxo de Trabalho com IA: Planejamento vs Execução
+
+- **Planejamento estruturado primeiro:** Sempre realizar o diagnóstico, análise de impacto e plano passo a passo com um modelo analítico de maior capacidade (ex: Gemini Pro ou modelo "mais caro"). Proibido executar direto sem planejamento estruturado.
+- **Execução por etapas:** Após a definição e aprovação do plano, a execução cirúrgica do código, testes e sincronização entre os três módulos deve ser executada por um modelo mais leve e econômico (ex: Gemini Flash ou modelo "mais barato").
+
 ## Convenções Críticas
 
 1. **Sem import com asterisco:** Importações explícitas sempre. Checkstyle `AvoidStarImport` falha a compilação se houver asteriscos.

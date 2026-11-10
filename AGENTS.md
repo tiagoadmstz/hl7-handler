@@ -45,6 +45,11 @@ Consultar a skill correspondente antes de agir:
 | Revisar PR, branch, diff ou arquivos | `review-guidelines` (`.agents/skills/review-guidelines/SKILL.md`) |
 | Abrir PR ou preparar descrição de PR/release | `pull-request` (`.agents/skills/pull-request/SKILL.md`) |
 
+## Fluxo de Trabalho com IA: Planejamento vs Execução
+
+- **Planejamento prévio obrigatório:** Nunca iniciar alterações complexas ou implementações diretamente no código sem antes produzir e alinhar um plano detalhado. A análise arquitetural, impacto e desenho da solução devem sempre ser feitos utilizando um modelo/agente analítico mais avançado ("mais caro", ex: Claude Opus/Sonnet, Gemini Pro, GPT-4o).
+- **Execução cirúrgica do plano:** Uma vez validado e estruturado o plano passo a passo, a execução das mudanças (código, testes, paridade entre os três módulos e checagens) deve ser delegada a um modelo/agente mais leve e econômico ("mais barato", ex: Gemini Flash, Claude Haiku, GPT-4o-mini), executando o plano com precisão.
+
 ## Convenções de Código
 
 - **Idiomas:** identificadores, nomes de arquivo, javadoc, mensagens de exceção e de commit em inglês. README, CHANGELOG, CONTRIBUTING, templates do GitHub e `@DisplayName` dos testes em português.
