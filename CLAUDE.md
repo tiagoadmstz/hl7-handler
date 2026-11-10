@@ -35,15 +35,26 @@ São três artefatos com **a mesma API pública** (pacote `io.github.tdteixeira.
   - `./mvnw install -Pexamples`: exemplos. Exige o Maven rodando em Java 17+; passar o `JAVA_HOME` só nesse comando.
 - No `hl7-handler-java11`, com o Maven em Java 8, o Maven não lê o `module-info` multi-release do Jackson 2. Por isso há `requires com.fasterxml.jackson.annotation` explícito e testes pelo classpath (`useModulePath=false`). O aviso "filename-based automodules" no build vem daí e é esperado.
 
+## Skills do projeto (`.claude/skills/`)
+
+Ler a skill correspondente **antes** de agir, mesmo que ela não tenha sido carregada automaticamente:
+
+| Situação | Skill |
+|---|---|
+| Escrever ou alterar código, pom ou teste | `code-style` |
+| Revisar PR, branch, diff ou arquivos | `review-guidelines` (e também `code-style`) |
+| Abrir PR ou escrever descrição de PR/release | `pull-request` (template em `.github/pull_request_template.md`) |
+
 ## Convenções
 
-- **Idiomas:** identificadores, nomes de arquivo e mensagens de commit em inglês. README, CHANGELOG, javadoc de negócio e `@DisplayName` dos testes em português.
+- **Idiomas:** identificadores, nomes de arquivo, javadoc, mensagens de exceção e de commit em inglês. README, CHANGELOG, CONTRIBUTING, templates do GitHub e `@DisplayName` dos testes em português.
 - **Testes:** JUnit 5 + AssertJ; um método por caso, sem `@ParameterizedTest`. Amostras HL7 sempre com dados fictícios.
-- **Commits:** conventional commits (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`, `build:`), sem linhas de coautoria.
+- **Commits:** conventional commits (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`, `build:`, `ci:`), **só o título, sem corpo**, sem linhas de coautoria nem menção a IA. Poucos commits, agrupados por tema.
 - **Comentários:** nada de comentários em `pom.xml` e arquivos de build. Em Java, só quando explicam o porquê.
 - **Sem ternário aninhado.** Para fallback, usar `if`/`else`.
 - **Dependências:** fixar versões publicadas há pelo menos duas semanas.
 - **CHANGELOG.md:** registrar toda mudança de comportamento ou de API em `[Não Lançado]`.
+- O detalhe de cada regra está na skill `code-style`.
 
 ## Compatibilidade de versões HL7
 

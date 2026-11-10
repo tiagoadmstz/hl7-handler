@@ -1,0 +1,51 @@
+name: Compatibilidade HL7
+description: Mensagem de uma versão ou família HL7 (v2, v3, CDA, FHIR) que não é lida ou mapeada corretamente
+title: "[HL7] "
+labels: ["hl7-compatibility"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Use apenas dados fictícios** na mensagem de exemplo.
+  - type: dropdown
+    id: familia
+    attributes:
+      label: Família
+      options:
+        - HL7 v2
+        - HL7 v3
+        - CDA R2
+        - FHIR
+    validations:
+      required: true
+  - type: input
+    id: versao
+    attributes:
+      label: Versão
+      description: v2 = MSH-12; v3 = interactionId/versionCode; FHIR = release.
+      placeholder: "2.8.2, PRPA_IN201306UV02, R5..."
+    validations:
+      required: true
+  - type: input
+    id: origem
+    attributes:
+      label: Sistema de origem
+      placeholder: "Equipamento, LIS, HIS, gateway..."
+  - type: textarea
+    id: mensagem
+    attributes:
+      label: Mensagem de exemplo (anonimizada)
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: esperado
+    attributes:
+      label: Resultado esperado
+      description: Campos que deveriam ser lidos, ou o JSON/VO esperado.
+    validations:
+      required: true
+  - type: textarea
+    id: obtido
+    attributes:
+      label: Resultado obtido

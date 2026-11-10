@@ -76,18 +76,18 @@ Se tiver uma ideia para uma nova funcionalidade:
 
 ### Enviando seu PR
 
-1. **Commit** com mensagens claras e descritivas:
+1. **Commit** só com o título, em inglês, no padrão abaixo:
    ```bash
-   git commit -m "feat: adiciona suporte a mapeamento YAML customizado"
-   git commit -m "fix: corrige parsing de campos repetidos"
+   git commit -m "feat(mapping): support constants in yaml mappings"
+   git commit -m "fix(parser): keep field repetitions when writing"
    ```
 
 2. **Push** para sua branch
-3. **Abra um Pull Request** com:
-   - Título claro e conciso
-   - Descrição detalhada do que foi alterado
-   - Referência a issues relacionadas (ex: `Closes #123`)
-   - Screenshots/exemplos se relevante
+3. **Abra um Pull Request** preenchendo o template (`.github/pull_request_template.md`):
+   - título no mesmo padrão do commit;
+   - todas as seções do template, com `N/A` onde não se aplica;
+   - o checklist marcado com honestidade, inclusive a aplicação nos três módulos;
+   - issues relacionadas em formato de link (ex.: `Closes #123`).
 
 ### Padrões de Commit
 
@@ -98,17 +98,17 @@ Use **conventional commits**:
 - `style:` formatação, sem mudanças lógicas
 - `refactor:` refatoração de código
 - `test:` adição ou modificação de testes
-- `chore:` atualização de build, dependências, etc.
+- `chore:` manutenção, sem mudança de comportamento
+- `build:` build e dependências
+- `ci:` integração contínua
 
-**Exemplo:**
-```
-feat(mapping): adiciona suporte a de-para com templates Jinja2
+Regras:
+- **Só o título**, sem corpo: o contexto vai na descrição do PR.
+- Em inglês, imperativo, minúsculo depois dos dois-pontos, sem ponto final.
+- Escopo opcional quando ajuda: `parser`, `mllp`, `mapping`, `writer`, `v3`, `fhir`, `build`, `ci`.
+- Poucos commits por PR, agrupados por tema.
 
-Permite usar templates Jinja2 em arquivos YAML de mapeamento
-para transformações mais complexas.
-
-Closes #42
-```
+**Exemplo:** `fix(mllp): keep the next frame when the trailer is missing`
 
 ## 🧪 Testes
 

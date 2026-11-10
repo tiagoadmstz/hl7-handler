@@ -1,0 +1,71 @@
+name: Bug
+description: Algo não funciona como esperado
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por reportar. **Não cole mensagens HL7 com dados reais de pacientes**: troque nomes, CNS, CPF, prontuários e datas de nascimento por valores fictícios.
+        Para vulnerabilidades de segurança, não abra issue pública; veja o `SECURITY.md`.
+  - type: textarea
+    id: descricao
+    attributes:
+      label: Descrição
+      description: O que aconteceu?
+    validations:
+      required: true
+  - type: textarea
+    id: esperado
+    attributes:
+      label: Comportamento esperado
+    validations:
+      required: true
+  - type: textarea
+    id: reproducao
+    attributes:
+      label: Como reproduzir
+      description: Código mínimo e passos. Se possível, um teste que falha.
+      render: java
+    validations:
+      required: true
+  - type: textarea
+    id: mensagem
+    attributes:
+      label: Mensagem HL7 de exemplo (anonimizada)
+      description: Use `\r` ou quebras de linha entre segmentos.
+      render: text
+  - type: dropdown
+    id: artefato
+    attributes:
+      label: Artefato
+      options:
+        - hl7-handler-core (Java 17+)
+        - hl7-handler-java11 (Java 11 a 16)
+        - hl7-handler-java8 (Java 8)
+    validations:
+      required: true
+  - type: input
+    id: versao-lib
+    attributes:
+      label: Versão da biblioteca
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: versao-java
+    attributes:
+      label: Versão do Java
+      placeholder: "17.0.17"
+    validations:
+      required: true
+  - type: input
+    id: versao-hl7
+    attributes:
+      label: Padrão e versão HL7 da mensagem
+      placeholder: "v2.6 (MSH-12), v3, FHIR R4..."
+  - type: textarea
+    id: logs
+    attributes:
+      label: Stack trace ou logs
+      render: text
