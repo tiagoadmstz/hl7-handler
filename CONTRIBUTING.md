@@ -2,10 +2,6 @@
 
 Obrigado por considerar contribuir para o **HL7 Handler**! Este documento fornece orientações e instruções para fazer contribuições significativas ao projeto.
 
-## 📋 Código de Conduta
-
-Por favor, leia e respeite nosso [Código de Conduta](./CODE_OF_CONDUCT.md). Esperamos que todos os colaboradores sigam padrões de cordialidade e profissionalismo.
-
 ## 🐛 Reportando Bugs
 
 Antes de criar um relatório de bug, verifique se o problema já não foi reportado. Se encontrar um bug:
