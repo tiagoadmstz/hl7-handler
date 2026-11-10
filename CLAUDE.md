@@ -52,7 +52,7 @@ Ler a skill correspondente **antes** de agir, mesmo que ela não tenha sido carr
 - **Commits:** conventional commits (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`, `build:`, `ci:`), **só o título, sem corpo**, sem linhas de coautoria nem menção a IA. Poucos commits, agrupados por tema.
 - **Comentários:** nada de comentários em `pom.xml` e arquivos de build. Em Java, só quando explicam o porquê.
 - **Sem ternário aninhado.** Para fallback, usar `if`/`else`.
-- **Sem import com asterisco.** Importar só o que é usado. `import module` (Java 25) só nos exemplos; nos três módulos, import explícito.
+- **Sem import com asterisco.** Importar só o que é usado. `import module` (Java 25) só nos exemplos; nos três módulos, import explícito. O Checkstyle (`AvoidStarImport`) barra no `validate`.
 - **Dependências:** fixar versões publicadas há pelo menos duas semanas.
 - **CHANGELOG.md:** registrar toda mudança de comportamento ou de API em `[Não Lançado]`.
 - O detalhe de cada regra está na skill `code-style`.
