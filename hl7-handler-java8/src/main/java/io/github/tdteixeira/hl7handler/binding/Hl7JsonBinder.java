@@ -94,7 +94,11 @@ public class Hl7JsonBinder {
      * Binds a semantic Map into the client's custom Value Object (VO / DTO / POJO).
      */
     public <T> T bind(Map<String, Object> data, Class<T> targetClass) {
-        return jsonMapper.convertValue(data, targetClass);
+        try {
+            return jsonMapper.convertValue(data, targetClass);
+        } catch (IllegalArgumentException e) {
+            throw new Hl7BindingException("Error binding mapped values to " + targetClass.getName(), e);
+        }
     }
 
     /**

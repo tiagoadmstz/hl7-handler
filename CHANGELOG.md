@@ -49,7 +49,7 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ### Mudado
 - `Hl7Handler.builder().build()` passa a devolver `Hl7Processor` (mudança incompatível); para o `Hl7Reader` anterior usar `Hl7Handler.builder()...reader()`
 - `MllpFramingException` deixa de ser `IOException` e passa a estender `Hl7Exception` (não verificada); `MllpStreamReader` continua declarando `IOException` para erros de I/O
-- `Hl7JsonBinder` lança `Hl7BindingException` em vez de `RuntimeException`
+- `Hl7JsonBinder` lança `Hl7BindingException` em vez de `RuntimeException`, inclusive em `bindTo` (valor que não converte para o tipo do campo, como texto em campo `int`, passa a ser `Hl7BindingException` e não `IllegalArgumentException` do Jackson)
 - Leitura de mapeamento YAML lança `Hl7MappingException` e leitura MLLP lança `Hl7ParseException` em vez de `UncheckedIOException`; entrada ausente ou em branco lança `Hl7ParseException` em vez de `IllegalStateException`, e `toMap()` sem mapeamento lança `Hl7MappingException` em vez de `IllegalStateException`
 - Refatoração inicial da arquitetura para separar concerns
 - `hl7-handler-core` passa a exigir Java 17 (antes 25) e usa Jackson 3

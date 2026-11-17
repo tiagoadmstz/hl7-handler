@@ -99,6 +99,16 @@ class Hl7ProcessorTest {
     }
 
     @Test
+    @DisplayName("Deve lançar Hl7BindingException no bindTo quando um valor não converte para o campo")
+    void shouldThrowBindingExceptionOnBindToWhenValueDoesNotConvert() {
+        Hl7Result result = processorWithMapping().read(sampleHl7);
+
+        assertThatThrownBy(() -> result.bindTo(NumericMessageVO.class))
+                .isInstanceOf(Hl7BindingException.class)
+                .hasMessageContaining(NumericMessageVO.class.getName());
+    }
+
+    @Test
     @DisplayName("Deve gerar JSON bruto quando o processador não tem mapeamento")
     void shouldRenderRawJsonWhenProcessorHasNoMapping() {
         Hl7Processor processor = Hl7Handler.builder().build();
@@ -230,5 +240,12 @@ class Hl7ProcessorTest {
         } finally {
             executor.shutdownNow();
         }
+    }
+
+    public static class NumericMessageVO {
+        private int mensagemId;
+
+        public int getMensagemId() { return mensagemId; }
+        public void setMensagemId(int mensagemId) { this.mensagemId = mensagemId; }
     }
 }
