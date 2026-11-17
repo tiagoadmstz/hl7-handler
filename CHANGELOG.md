@@ -55,6 +55,7 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - `MllpStreamReader` ignora LF (0x0A) e CR fora de uma mensagem, em vez de lançar exceção com `requireFraming` ativo
 - `Hl7AckGenerator` escapa o texto da MSA-3 e copia MSH-3 a MSH-6 e MSA-2 em forma crua, preservando componentes
 - `MllpStreamReader.wrap` respeita o charset do MSH-18 em vez de usar sempre o charset padrão
+- `\Xhh\` passa a ser decodificado com o charset da mensagem (MSH-18), com UTF-8 como padrão
 
 ### Removido
 - Dependências não usadas `commons-lang3` e `commons-collections4`

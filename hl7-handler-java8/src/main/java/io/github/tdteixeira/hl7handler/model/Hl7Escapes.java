@@ -1,5 +1,8 @@
 package io.github.tdteixeira.hl7handler.model;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
 /**
  * Utility for encoding and decoding HL7 v2 escape sequences.
  */
@@ -9,15 +12,25 @@ public final class Hl7Escapes {
     }
 
     /**
-     * Decodes HL7 escape sequences (\F\, \S\, \T\, \R\, \E\, \.br\, \Xhh\).
+     * Decodes HL7 escape sequences using UTF-8 for hexadecimal (\Xhh\) sequences.
      * Sequences like \H\, \N\ and \Z...\ are preserved as literal text.
      */
     public static String decode(String raw, Hl7Delimiters delimiters) {
+        return decode(raw, delimiters, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Decodes HL7 escape sequences (\F\, \S\, \T\, \R\, \E\, \.br\, \Xhh\).
+     * Hexadecimal sequences are bytes in the given charset (UTF-8 when null).
+     * Sequences like \H\, \N\ and \Z...\ are preserved as literal text.
+     */
+    public static String decode(String raw, Hl7Delimiters delimiters, Charset charset) {
         if (raw == null || raw.isEmpty()) {
             return raw;
         }
 
         Hl7Delimiters delims = delimiters != null ? delimiters : Hl7Delimiters.DEFAULT;
+        Charset cs = charset != null ? charset : StandardCharsets.UTF_8;
         char esc = delims.escapeCharacter();
         if (raw.indexOf(esc) == -1) {
             return raw;
@@ -31,7 +44,7 @@ public final class Hl7Escapes {
                 int end = raw.indexOf(esc, i + 1);
                 if (end != -1) {
                     String seq = raw.substring(i + 1, end);
-                    String replacement = decodeSequence(seq, delims);
+                    String replacement = decodeSequence(seq, delims, cs);
                     if (replacement != null) {
                         sb.append(replacement);
                         i = end + 1;
@@ -46,7 +59,7 @@ public final class Hl7Escapes {
         return sb.toString();
     }
 
-    private static String decodeSequence(String seq, Hl7Delimiters delims) {
+    private static String decodeSequence(String seq, Hl7Delimiters delims, Charset charset) {
         if ("F".equals(seq)) {
             return String.valueOf(delims.fieldSeparator());
         }
@@ -68,12 +81,11 @@ public final class Hl7Escapes {
         if ((seq.startsWith("X") || seq.startsWith("x")) && seq.length() > 1) {
             String hex = seq.substring(1);
             if (hex.length() % 2 == 0 && hex.matches("(?i)[0-9a-f]+")) {
-                StringBuilder decodedHex = new StringBuilder(hex.length() / 2);
+                byte[] bytes = new byte[hex.length() / 2];
                 for (int h = 0; h < hex.length(); h += 2) {
-                    int code = Integer.parseInt(hex.substring(h, h + 2), 16);
-                    decodedHex.append((char) code);
+                    bytes[h / 2] = (byte) Integer.parseInt(hex.substring(h, h + 2), 16);
                 }
-                return decodedHex.toString();
+                return new String(bytes, charset);
             }
         }
         return null;
