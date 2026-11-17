@@ -162,5 +162,11 @@
                 <module>hl7-handler-examples</module>
             </modules>
         </profile>
+        <profile>
+            <id>benchmarks</id>
+            <modules>
+                <module>hl7-handler-benchmarks</module>
+            </modules>
+        </profile>
     </profiles>
 </project>
