@@ -46,6 +46,7 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - `hl7-handler-core` passa a exigir Java 17 (antes 25) e usa Jackson 3
 - Build com JDK 25 via Maven Toolchains; testes rodam em JDK 8, 11, 17 e 25
 - Nos artefatos de Java 8 e 11, `Hl7Delimiters` é uma classe final (no core continua `record`)
+- Strategies de versão passam a ler os dados do perfil `.properties` (fonte única), incluindo as novas chaves `event.coordinate` e `patient_id.coordinate`
 
 ### Consertado
 - `fromMshHeader` não invade campos subsequentes com MSH-2 curto

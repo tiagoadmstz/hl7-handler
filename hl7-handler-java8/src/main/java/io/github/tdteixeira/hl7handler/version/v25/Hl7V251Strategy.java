@@ -3,7 +3,7 @@ package io.github.tdteixeira.hl7handler.version.v25;
 import io.github.tdteixeira.hl7handler.model.Hl7Version;
 
 /**
- * HL7 v2.5.1 strategy.
+ * HL7 v2.5.1 strategy. Version data comes from the 2.5.1 profile.
  */
 public class Hl7V251Strategy extends Hl7V25Strategy {
 

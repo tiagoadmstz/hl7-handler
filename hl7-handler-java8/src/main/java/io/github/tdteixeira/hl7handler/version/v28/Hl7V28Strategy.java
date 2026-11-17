@@ -6,7 +6,7 @@ import io.github.tdteixeira.hl7handler.version.v27.Hl7V271Strategy;
 import java.util.Objects;
 
 /**
- * HL7 v2.8 strategy: supports 2.8, serves as fallback for 2.8.x and 2.9.
+ * HL7 v2.8 strategy. Version data comes from the 2.8 profile. Also serves as the fallback for 2.8.x and 2.9.
  */
 public class Hl7V28Strategy extends Hl7V271Strategy {
 
