@@ -261,6 +261,20 @@ class Hl7MllpAndAckTest {
     }
 
     @Test
+    @DisplayName("Mantém o MSH-10 cru no ACK quando o controle tem delimitador escapado")
+    void shouldKeepRawControlIdWithEscapedDelimiterInAckMsh10() {
+        String hl7 = "MSH|^~\\&|APP_A|FAC_A|APP_B|FAC_B|20261110120000||ADT^A01|CTRL\\F\\01|P|2.5\r";
+        Hl7Message msg = Hl7Handler.reader().from(hl7).toMessage();
+
+        String ack = Hl7AckGenerator.generateAck(msg);
+
+        Hl7Message parsedAck = Hl7Handler.reader().from(ack).toMessage();
+        assertThat(parsedAck.getSegments()).hasSize(2);
+        assertThat(parsedAck.getSegments("MSH").get(0).getField(10).getRawValue(1)).isEqualTo("ACK-CTRL\\F\\01");
+        assertThat(parsedAck.getSegments("MSA").get(0).getField(2).getRawValue(1)).isEqualTo("CTRL\\F\\01");
+    }
+
+    @Test
     @DisplayName("Codifa o payload no charset do MSH-18 ao fazer wrap")
     void shouldWrapWithCharsetFromMsh18() {
         String msg = "MSH|^~\\&|SIS|HOSP|||20261110||ADT^A01|MSG01|P|2.3||||||8859/1\rPID|1||12345||TESTE^ação";

@@ -75,7 +75,7 @@ public final class Hl7AckGenerator {
 
         String messageType = strategy.formatMsh9(event, cs);
 
-        String incomingControlId = incomingMessage.get("MSH.10");
+        String incomingControlId = rawMshField(incomingMessage, 10);
         String ackControlId = "ACK-" + (incomingControlId.isEmpty() ? now.toEpochSecond() : incomingControlId);
         String processingId = incomingMessage.get("MSH.11");
         if (processingId.isEmpty()) {
