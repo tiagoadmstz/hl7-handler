@@ -8,6 +8,7 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [Não Lançado]
 
 ### Adicionado
+- `Hl7Handler.builder()` passa a aceitar `keepEmptyStrings(boolean)` para devolver strings vazias em vez de `null` nos campos ausentes e `converter(nome, conversor)` para registrar conversores customizados usados em `tipo` no YAML, validados já no `build()`
 - Validação do mapeamento YAML no carregamento (`Hl7MappingValidator`): coordenadas, especificações de lista, tipos e faixas de `versoes`/`porVersao` inválidos, além de chaves YAML duplicadas (leitura com `STRICT_DUPLICATE_DETECTION`), lançam `Hl7MappingException` com o caminho do nó no YAML
 - Mapeamento YAML semântico avançado por versão com suporte a faixas (`Hl7VersionRange`), sobreposição hierárquica por especificidade (`porVersao`), validação de versões suportadas (`versoes`) e exceção especializada `Hl7MappingException`
 - Conversão tipada em mapeamentos YAML (`Hl7TypeConverter`) com suporte nativo a `texto`, `numero` (Long / Double), `data` (`Temporal` via `Hl7DateTime`), `booleano` (S/N, 1/0, SIM/NAO, TRUE/FALSE) e registro dinâmico de conversores customizados
