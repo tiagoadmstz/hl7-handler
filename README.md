@@ -48,6 +48,28 @@ A biblioteca é publicada em três artefatos com a mesma API (mesmo pacote `io.g
 
 ---
 
+## 🧬 Versões HL7 suportadas
+
+O parser é um só para todas as versões v2 (2.1 a 2.9). A versão lida em `MSH-12` escolhe um perfil em `hl7-handler-core/src/main/resources/hl7/profiles/` (um `.properties` por versão) e a estratégia que define o `MSH-9` do ACK, o uso de `MSH-18`, o 5º caractere de `MSH-2`, o formato de data (TS ou DTM) e as coordenadas padrão do evento e do ID do paciente.
+
+Versão desconhecida nunca bloqueia o parse: a leitura segue com o perfil mais próximo e o aviso aparece em `Hl7Message.warnings()`. As amostras de cada versão ficam em `src/test/resources/samples/versions/` de cada módulo.
+
+| Versão | O que muda | Como a lib trata | Perfil |
+|---|---|---|---|
+| 2.1 | `MSH-9` só com o tipo; evento no `EVN-1`; sem `MSH-18` | evento lido em `EVN.1`; ACK com `MSH-9` = `ACK`; `MSH-18` não é copiado | 2.1 |
+| 2.2 | `MSH-9` = tipo^evento; sem `MSH-18` | evento lido em `MSH.9.2`; ACK com `ACK^evento`; ID do paciente em `PID.2.1` | 2.2 |
+| 2.3 | `MSH-18` (charset) disponível; ID do paciente em `PID-2` | charset do `MSH-18` aplicado; ACK com `ACK^evento`; ID em `PID.2.1` | 2.3 |
+| 2.3.1 | `MSH-9.3` com a estrutura da mensagem; ID do paciente em `PID-3` | ACK com `ACK^evento^ACK`; ID em `PID.3.1` | 2.3.1 |
+| 2.4 | `MSH-9.3` com a estrutura da mensagem | ACK com `ACK^evento^ACK`; ID em `PID.3.1` | 2.4 |
+| 2.5 / 2.5.1 | `TS` com fuso horário | `MSH-7` do ACK em TS com offset (`yyyyMMddHHmmssZ`); ACK com `ACK^evento^ACK`; ID em `PID.3.1` | 2.5 / 2.5.1 |
+| 2.6 | `DTM` no lugar de `TS` (com microssegundos e fuso); `MSH-18` costuma vir como `UNICODE UTF-8` em monitores multiparamétricos (ex.: gateways de sinais vitais) | `MSH-7` do ACK em DTM; ID em `PID.3.1` | 2.6 |
+| 2.7 / 2.7.1 | `MSH-2` com 5º caractere de truncamento (`#`) | o `#` é aceito e repetido no `MSH-2` do ACK | 2.7 / 2.7.1 |
+| 2.8 | Mesmas regras de 2.7.1 (DTM e truncamento) | idem; é também o fallback de 2.8.x e 2.9 | 2.8 |
+| 2.9 e outras numéricas sem perfil próprio (ex.: 3.0) | não há perfil próprio | texto da versão preservado (`MSH-12`, `Hl7Version`); usa o perfil mais próximo abaixo, 2.8, com aviso | 2.8 |
+| Desconhecida (sem `MSH-12` ou valor não numérico) | não se aplica | usa o perfil 2.5 (baseline), com aviso | 2.5 |
+
+---
+
 ## 📦 Estrutura do Repositório
 
 ```
@@ -249,6 +271,43 @@ porVersao:
 - Um mapa só é lido como diretiva quando **todas** as suas chaves são da diretiva. Um grupo com outras chaves, como `exame: { valor: "OBX.5", unidade: "OBX.6" }`, continua sendo um grupo comum.
 - Tipos embutidos: `texto`, `numero`, `data`, `booleano` (e os nomes em inglês).
 
+##### Metadados e faixas de versão
+
+- `version` e `description`: metadados informativos, ignorados na transformação.
+- `mappings`: envoltório opcional do template. Se existir como mapa, só ele é transformado; sem ele, todas as chaves que não são metadados formam o template.
+- `versoes` (ou `versions`): faixas de versão aceitas pelo arquivo. Se a versão da mensagem não satisfizer a faixa, `toMap` e `bindTo` lançam `Hl7MappingException`. É o único ponto em que a versão bloqueia a leitura, inclusive para versão desconhecida.
+- `porVersao` (ou `byVersion`): sobreposições por faixa. Cada chave é uma faixa e o valor é um trecho do mapeamento, mesclado no template base. Se mais de uma faixa casar, a mais específica é aplicada por último e vence: versão exata, depois intervalo fechado (`>=2.3, <2.7`), depois faixa aberta (`>=2.3`), depois curinga (`2.x`, `*`).
+
+Expressões aceitas em `versoes` e nas chaves de `porVersao` (operadores `=`, `==`, `!=`, `>`, `>=`, `<`, `<=`; a vírgula funciona como E):
+
+| Expressão | Significa |
+|---|---|
+| `"2.5"` | somente 2.5 (não inclui 2.5.1) |
+| `">=2.3"` | 2.3 e superiores |
+| `"<2.3.1"` | anteriores a 2.3.1 (inclui 2.3) |
+| `">=2.3, <2.7"` | de 2.3 até antes de 2.7 |
+| `"2.x"` | qualquer 2.x |
+| `"*"` | qualquer versão conhecida |
+
+```yaml
+versoes: ">=2.3, <2.9"
+mappings:
+  paciente:
+    prontuario: "PID.3.1"
+porVersao:
+  "<2.3.1":
+    paciente:
+      prontuario: "PID.2.1"
+```
+
+##### Coordenadas e listas
+
+- `SEG.campo.componente.subcomponente`, como `PID.5.1`. O hífen também vale (`PID-5.1`).
+- `SEG[n].campo` escolhe a n-ésima ocorrência do segmento (`OBX[2].5`); `CAMPO[n]` escolhe a n-ésima repetição do campo (`PID.3[2].1`).
+- `@event` (ou `EVENT`) lê o evento: `MSH-9.2` a partir de 2.2 e `EVN-1` em 2.1. `@patientId` (ou `PATIENT_ID`) lê o ID do paciente da versão: `PID-2.1` até 2.3 e `PID-3.1` a partir de 2.3.1.
+- `lista: "OBX[*]"` percorre todas as ocorrências do segmento; `lista: "PID.13[*]"` percorre todas as repetições do campo.
+- Dentro de `item`, a coordenada é relativa ao elemento da lista. Em lista de segmento, `"3.1"` é o campo 3, componente 1 do próprio segmento. Em lista de repetição de campo, `"1"` é o componente da repetição; a forma absoluta (`PID.13[*].1`) também funciona. Fora de `item`, coordenada relativa é rejeitada na validação.
+
 #### Validação no carregamento
 
 Todo `withMapping(...)` valida o YAML e lança `Hl7MappingException` com o caminho do erro, por exemplo `Invalid HL7 coordinate 'PID.x' at 'paciente.nome'`. São verificadas chaves duplicadas, coordenadas, listas, tipos e faixas de `versoes` e `porVersao`.
@@ -299,6 +358,47 @@ byte[] ackMllpBytes = Hl7Handler.network().wrap("MSH|^~\\&|...|ACK^A01|...");
 
 - `wrap` codifica a mensagem com o charset do MSH-18 (UTF-8 quando ausente). MLLP sobre UTF-16 não é suportado.
 - Para ler várias mensagens chamando `readMessage` em sequência, passe um `PushbackInputStream` (ou um stream com `mark`) ou use `readAll`. Num stream comum, um quadro sem o `<CR>` final lança `MllpFramingException` em vez de perder bytes.
+
+---
+
+### ACK
+
+`Hl7Handler.generateAck(mensagem)` gera um ACK `AA` com o texto `Message accepted`. `Hl7Handler.generateAck(mensagem, "AE", "texto")` escolhe o código e o texto. O código é gravado como informado: a biblioteca não o valida, mas o uso padrão é `AA` (aceita), `AE` (erro de aplicação) e `AR` (rejeitada).
+
+```java
+Hl7Message mensagem = Hl7Handler.reader().from(rawHl7).toMessage();
+
+String ack = Hl7Handler.generateAck(mensagem);
+String erro = Hl7Handler.generateAck(mensagem, "AE", "Paciente não encontrado");
+```
+
+Regras do ACK:
+
+- `MSH-3`/`MSH-4` do ACK saem de `MSH-5`/`MSH-6` da mensagem recebida, e `MSH-5`/`MSH-6` do ACK saem de `MSH-3`/`MSH-4`. Os valores são copiados crus, com os componentes. Se a mensagem não trouxe `MSH-5`/`MSH-6`, o ACK usa `HL7_HANDLER` e `LOCAL`.
+- `MSH-9` segue a versão: `ACK` (2.1), `ACK^evento` (2.2 e 2.3) e `ACK^evento^ACK` (2.3.1 em diante). Sem evento, usa `R01`.
+- `MSH-10` do ACK é `ACK-` seguido do `MSH-10` recebido. Sem `MSH-10`, usa `ACK-` com o instante em segundos.
+- `MSA-1` é o código; `MSA-2` é o `MSH-10` recebido, cru; `MSA-3` é o texto com escape HL7 (`|` vira `\F\`, `^` vira `\S\`, `~` vira `\R\`, `&` vira `\T\`, `\` vira `\E\` e quebra de linha vira `\.br\`).
+- `MSH-12` é copiado cru. `MSH-7` segue o formato TS ou DTM da versão. `MSH-18` é copiado quando a versão o suporta (2.3 em diante) e a mensagem o trouxe.
+
+### Charset (MSH-18)
+
+| Valor do MSH-18 | Charset Java |
+|---|---|
+| `ASCII` | `US-ASCII` |
+| `8859/1` ou `ISO-8859-1` | `ISO-8859-1` |
+| `8859/2` ou `ISO-8859-2` | `ISO-8859-2` |
+| `8859/15` ou `ISO-8859-15` | `ISO-8859-15` |
+| `UNICODE`, `UNICODE UTF-8` ou `UTF-8` | `UTF-8` |
+| `UNICODE UTF-16` ou `UTF-16` | `UTF-16` |
+| Outro nome | `Charset.forName` com o próprio valor; se o nome não existir, o charset padrão da leitura |
+| Ausente ou em branco | `UTF-8` |
+
+Onde o charset é usado:
+
+- Leitura MLLP (`readMessage`, `readAll`, `readMllp`): o charset é detectado dos bytes do próprio quadro, pelo `MSH-18`, antes de decodificar. Quadro sem `MSH-18` usa o charset do leitor, que é UTF-8 por padrão e muda com `Hl7Handler.network(charset)` ou `Hl7Handler.builder().charset(...)`.
+- Parser: as sequências `\Xhh\` são decodificadas com o charset da mensagem (UTF-8 quando ausente).
+- `wrap`: codifica a mensagem com o charset do `MSH-18` (UTF-8 quando ausente).
+- MLLP sobre UTF-16 não é suportado: os bytes `0x0B`, `0x1C` e `0x0D` podem aparecer dentro dos caracteres UTF-16 e quebrar a moldura. Use UTF-8 na rede.
 
 ---
 
