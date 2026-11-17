@@ -30,7 +30,7 @@ O número **7** faz alusão direta à **7ª camada do Modelo OSI (a Camada de Ap
 
 ## 📦 Qual artefato usar
 
-A biblioteca é publicada em três artefatos com a mesma API (mesmo pacote `io.github.tdteixeira.hl7handler`). Cada artefato é um projeto independente, com código e testes próprios, escritos na sintaxe do seu Java mínimo. Uma correção precisa ser aplicada nos três. Use apenas um por projeto:
+A biblioteca é publicada em três artefatos com a mesma API (mesmo pacote `io.github.tiagoadmstz.hl7handler`). Cada artefato é um projeto independente, com código e testes próprios, escritos na sintaxe do seu Java mínimo. Uma correção precisa ser aplicada nos três. Use apenas um por projeto:
 
 | Artefato | Java | Jackson |
 |---|---|---|
@@ -40,7 +40,7 @@ A biblioteca é publicada em três artefatos com a mesma API (mesmo pacote `io.g
 
 ```xml
 <dependency>
-    <groupId>io.github.tdteixeira.hl7handler</groupId>
+    <groupId>io.github.tiagoadmstz.hl7handler</groupId>
     <artifactId>hl7-handler-core</artifactId>
     <version>0.1.0-SNAPSHOT</version>
 </dependency>
@@ -76,7 +76,7 @@ Versão desconhecida nunca bloqueia o parse: a leitura segue com o perfil mais p
 hl7-handler/
 ├── pom.xml                                  <- POM raiz (multi-módulo, toolchains)
 ├── hl7-handler-core/                        <- Artefato Java 17+ (Jackson 3, module-info)
-│   ├── src/main/java/io/github/tdteixeira/hl7handler/
+│   ├── src/main/java/io/github/tiagoadmstz/hl7handler/
 │   │   ├── Hl7Handler.java                  <- Fachada fluente pública
 │   │   ├── api/                             <- Interfaces públicas (Hl7Reader, etc.)
 │   │   ├── binding/                         <- Jackson JSON & Data Binding em VOs
@@ -149,10 +149,10 @@ Os módulos de demonstração consomem o módulo compartilhado [`example-stub`](
 Executa a demonstração em console, realizando parse, binding e comunicação via socket real com o `MockMllpServer`:
 ```bash
 # Windows
-.\mvnw.cmd exec:java -pl hl7-handler-examples/example-pure-java -D"exec.mainClass=io.github.tdteixeira.hl7handler.example.pure.PureJavaExample" -Pexamples
+.\mvnw.cmd exec:java -pl hl7-handler-examples/example-pure-java -D"exec.mainClass=io.github.tiagoadmstz.hl7handler.example.pure.PureJavaExample" -Pexamples
 
 # Linux / macOS
-./mvnw exec:java -pl hl7-handler-examples/example-pure-java -Dexec.mainClass="io.github.tdteixeira.hl7handler.example.pure.PureJavaExample" -Pexamples
+./mvnw exec:java -pl hl7-handler-examples/example-pure-java -Dexec.mainClass="io.github.tiagoadmstz.hl7handler.example.pure.PureJavaExample" -Pexamples
 ```
 
 Além do parse, do binding e do ACK pelo socket, a demonstração roda três casos:
@@ -229,7 +229,7 @@ O Maven monta o classpath (em Java 17 ou superior) e a execução usa um JDK 8 a
 .\mvnw.cmd install -Pexamples -pl hl7-handler-examples/example-pure-java8 -am
 .\mvnw.cmd dependency:build-classpath -pl hl7-handler-examples/example-pure-java8 -Dmdep.outputFile=target/classpath.txt -Pexamples
 $cp = Get-Content hl7-handler-examples\example-pure-java8\target\classpath.txt
-& "$env:JAVA8_HOME\bin\java" -cp "hl7-handler-examples\example-pure-java8\target\classes;$cp" io.github.tdteixeira.hl7handler.example.java8.PureJava8Example
+& "$env:JAVA8_HOME\bin\java" -cp "hl7-handler-examples\example-pure-java8\target\classes;$cp" io.github.tiagoadmstz.hl7handler.example.java8.PureJava8Example
 ```
 
 ```bash
@@ -237,7 +237,7 @@ $cp = Get-Content hl7-handler-examples\example-pure-java8\target\classpath.txt
 ./mvnw install -Pexamples -pl hl7-handler-examples/example-pure-java8 -am
 ./mvnw dependency:build-classpath -pl hl7-handler-examples/example-pure-java8 -Dmdep.outputFile=target/classpath.txt -Pexamples
 CP=$(cat hl7-handler-examples/example-pure-java8/target/classpath.txt)
-"$JAVA8_HOME/bin/java" -cp "hl7-handler-examples/example-pure-java8/target/classes:$CP" io.github.tdteixeira.hl7handler.example.java8.PureJava8Example
+"$JAVA8_HOME/bin/java" -cp "hl7-handler-examples/example-pure-java8/target/classes:$CP" io.github.tiagoadmstz.hl7handler.example.java8.PureJava8Example
 ```
 
 ---
@@ -471,7 +471,7 @@ PacienteVO vo = PROCESSOR.read(rawHl7).bindTo(PacienteVO.class);
 
 Todas as exceções da biblioteca estendem `Hl7Exception`, que é não verificada (`RuntimeException`):
 
-- `Hl7Exception`: classe base, no pacote raiz `io.github.tdteixeira.hl7handler`.
+- `Hl7Exception`: classe base, no pacote raiz `io.github.tiagoadmstz.hl7handler`.
 - `Hl7ParseException`: entrada ausente ou em branco e falha de leitura MLLP.
 - `Hl7BindingException`: falha de serialização ou desserialização JSON, inclusive no `bindTo`.
 - `Hl7MappingException` (pacote `mapping`): mapeamento YAML inválido ou ausente.

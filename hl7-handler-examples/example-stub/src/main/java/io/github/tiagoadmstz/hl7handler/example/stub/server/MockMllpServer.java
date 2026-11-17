@@ -1,0 +1,101 @@
+package io.github.tiagoadmstz.hl7handler.example.stub.server;
+
+import module java.base;
+
+import io.github.tiagoadmstz.hl7handler.Hl7Handler;
+import io.github.tiagoadmstz.hl7handler.model.Hl7Message;
+import io.github.tiagoadmstz.hl7handler.network.MllpFramingException;
+import io.github.tiagoadmstz.hl7handler.network.MllpStreamReader;
+
+/**
+ * Embedded Mock MLLP TCP Server for testing network HL7 integration.
+ * Listens for incoming HL7 messages, decodes them, and replies with automatic HL7 ACK frames.
+ */
+public class MockMllpServer implements AutoCloseable {
+
+    private final int requestedPort;
+    private ServerSocket serverSocket;
+    private final AtomicBoolean running = new AtomicBoolean(false);
+    private ExecutorService threadPool;
+    private int actualPort;
+
+    public MockMllpServer() {
+        this(0); // Port 0 picks any available ephemeral port
+    }
+
+    public MockMllpServer(int port) {
+        this.requestedPort = port;
+    }
+
+    /**
+     * Starts the mock server in a background thread.
+     */
+    public synchronized MockMllpServer start() throws IOException {
+        if (running.get()) {
+            return this;
+        }
+
+        serverSocket = new ServerSocket(requestedPort);
+        actualPort = serverSocket.getLocalPort();
+        running.set(true);
+        threadPool = Executors.newCachedThreadPool();
+
+        threadPool.submit(this::listenLoop);
+        return this;
+    }
+
+    private void listenLoop() {
+        while (running.get() && !serverSocket.isClosed()) {
+            try {
+                Socket clientSocket = serverSocket.accept();
+                threadPool.submit(() -> handleClient(clientSocket));
+            } catch (IOException e) {
+                if (!running.get()) {
+                    break;
+                }
+            }
+        }
+    }
+
+    private void handleClient(Socket socket) {
+        try (socket;
+             InputStream in = socket.getInputStream();
+             OutputStream out = socket.getOutputStream()) {
+
+            MllpStreamReader reader = Hl7Handler.network();
+            String incomingHl7;
+
+            while ((incomingHl7 = reader.readMessage(in)) != null) {
+                Hl7Message msg = Hl7Handler.reader().from(incomingHl7).toMessage();
+                String ack = Hl7Handler.generateAck(msg, "AA", "Mensagem processada com sucesso");
+
+                byte[] ackFrame = reader.wrap(ack);
+                out.write(ackFrame);
+                out.flush();
+            }
+        } catch (IOException | MllpFramingException ignored) {}
+    }
+
+    public int getPort() {
+        return actualPort;
+    }
+
+    public boolean isRunning() {
+        return running.get();
+    }
+
+    @Override
+    public synchronized void close() {
+        if (running.compareAndSet(true, false)) {
+            try {
+                if (serverSocket != null && !serverSocket.isClosed()) {
+                    serverSocket.close();
+                }
+            } catch (IOException ignored) {}
+
+            if (threadPool != null) {
+                threadPool.shutdownNow();
+            }
+        }
+    }
+}

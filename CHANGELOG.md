@@ -18,7 +18,7 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - Mapeamento de coleções e repetições para listas estruturadas a partir de segmentos múltiplos (`lista: "OBX[*]"`) e repetições de campos (`lista: "PID.13[*]"`), guiado por template de `item`
 - Suporte a constantes estáticas (`valor`), resolução de caminho alternativo com fallback (`fallback`), coordenadas semânticas (`@event`, `@patientId`) e controle de campos ausentes com retorno padrão `null` (ou strings vazias via `keepEmptyStrings`)
 - Suíte completa de testes de mapeamento `Hl7MappingTest` com 14 novos cenários e paridade 100% nos três módulos (`hl7-handler-core`, `hl7-handler-java11`, `hl7-handler-java8`)
-- Arquitetura Strategy Pattern por versão HL7 (`io.github.tdteixeira.hl7handler.version` e subpacotes `v21` a `v28`), desacoplando regras de MSH-9, MSH-18, truncamento MSH-2, timestamp de cabeçalho (TS/DTM) e coordenadas padrão de evento (`EVN.1`/`MSH.9.2`) e paciente (`PID.2.1`/`PID.3.1`) nos três módulos
+- Arquitetura Strategy Pattern por versão HL7 (`io.github.tiagoadmstz.hl7handler.version` e subpacotes `v21` a `v28`), desacoplando regras de MSH-9, MSH-18, truncamento MSH-2, timestamp de cabeçalho (TS/DTM) e coordenadas padrão de evento (`EVN.1`/`MSH.9.2`) e paciente (`PID.2.1`/`PID.3.1`) nos três módulos
 - `Hl7VersionStrategyRegistry` thread-safe para resolução exata, floor e baseline (v2.5) de estratégias de versão
 - **Quebra:** `Hl7Version` deixa de ser `enum` e passa a ser tipo imutável aberto e comparável (`Comparable<Hl7Version>`), preservando versões como `2.9` e `2.8.2` sem forçá-las a `UNKNOWN`; `switch`, `valueOf` e `ordinal()`/`name()` sobre `Hl7Version` deixam de funcionar
 - **Quebra:** `Hl7Reader` ganha o método `withMapping(Map<String, Object>)`; implementações próprias de `Hl7Reader` precisam implementá-lo
@@ -49,6 +49,7 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - Módulo `hl7-handler-benchmarks` com benchmarks JMH do parser e do mapeamento (`Hl7Processor.read(...).toMap()`), incluído só pelo perfil `benchmarks` e não publicado
 
 ### Mudado
+- **Quebra:** groupId e pacote Java passam de io.github.tdteixeira.hl7handler para io.github.tiagoadmstz.hl7handler (inclusive o nome do módulo JPMS).
 - **Quebra:** `Hl7Handler.builder().build()` passa a devolver `Hl7Processor`; para o `Hl7Reader` anterior usar `Hl7Handler.builder()...reader()`
 - **Quebra:** `MllpFramingException` deixa de ser `IOException` e passa a estender `Hl7Exception` (não verificada); `MllpStreamReader` continua declarando `IOException` para erros de I/O
 - **Quebra:** `Hl7JsonBinder` lança `Hl7BindingException` em vez de `RuntimeException`, inclusive em `bindTo` (valor que não converte para o tipo do campo, como texto em campo `int`, passa a ser `Hl7BindingException` e não `IllegalArgumentException` do Jackson)

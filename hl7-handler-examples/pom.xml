@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.github.tdteixeira.hl7handler</groupId>
+        <groupId>io.github.tiagoadmstz.hl7handler</groupId>
         <artifactId>hl7-handler-parent</artifactId>
         <version>0.1.0-SNAPSHOT</version>
     </parent>

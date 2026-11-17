@@ -4,7 +4,7 @@ Biblioteca Java para mensagens HL7 v2: parser, detecção de versão (MSH-12), l
 
 ## Módulos
 
-São três artefatos com **a mesma API pública** (pacote `io.github.tdteixeira.hl7handler`). Um projeto usa só um deles.
+São três artefatos com **a mesma API pública** (pacote `io.github.tiagoadmstz.hl7handler`). Um projeto usa só um deles.
 
 | Módulo | Java mínimo | Jackson | Sintaxe permitida |
 |---|---|---|---|
