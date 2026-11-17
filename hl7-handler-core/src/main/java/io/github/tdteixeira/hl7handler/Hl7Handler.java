@@ -15,6 +15,7 @@ import io.github.tdteixeira.hl7handler.parser.Hl7Parser;
 import io.github.tdteixeira.hl7handler.parser.Hl7ParserRegistry;
 import io.github.tdteixeira.hl7handler.parser.Hl7VersionDetector;
 import io.github.tdteixeira.hl7handler.writer.Hl7Writer;
+import tools.jackson.core.StreamReadFeature;
 import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.File;
@@ -49,7 +50,9 @@ public final class Hl7Handler {
      * Creates a new fluent reader instance backed by the default global parser registry.
      */
     public static Hl7Reader reader() {
-        YAMLMapper yamlMapper = YAMLMapper.builder().build();
+        YAMLMapper yamlMapper = YAMLMapper.builder()
+            .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
+            .build();
         return new DefaultHl7Reader(
             Hl7ParserRegistry.getInstance(),
             new YamlMappingLoader(yamlMapper),
@@ -185,7 +188,9 @@ public final class Hl7Handler {
         }
 
         public Hl7Reader build() {
-            YAMLMapper yamlMapper = YAMLMapper.builder().build();
+            YAMLMapper yamlMapper = YAMLMapper.builder()
+                .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
+                .build();
             YamlMappingLoader yamlLoader = new YamlMappingLoader(yamlMapper);
             Hl7ToMapTransformer transformer = new Hl7ToMapTransformer();
             Hl7JsonBinder jsonBinder = new Hl7JsonBinder();

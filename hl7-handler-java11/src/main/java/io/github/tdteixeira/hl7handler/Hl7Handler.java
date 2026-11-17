@@ -1,5 +1,6 @@
 package io.github.tdteixeira.hl7handler;
 
+import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.github.tdteixeira.hl7handler.api.DefaultHl7Reader;
 import io.github.tdteixeira.hl7handler.api.Hl7Reader;
@@ -49,7 +50,9 @@ public final class Hl7Handler {
      * Creates a new fluent reader instance backed by the default global parser registry.
      */
     public static Hl7Reader reader() {
-        YAMLMapper yamlMapper = YAMLMapper.builder().build();
+        YAMLMapper yamlMapper = YAMLMapper.builder()
+            .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
+            .build();
         return new DefaultHl7Reader(
             Hl7ParserRegistry.getInstance(),
             new YamlMappingLoader(yamlMapper),
@@ -185,7 +188,9 @@ public final class Hl7Handler {
         }
 
         public Hl7Reader build() {
-            YAMLMapper yamlMapper = YAMLMapper.builder().build();
+            YAMLMapper yamlMapper = YAMLMapper.builder()
+                .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
+                .build();
             YamlMappingLoader yamlLoader = new YamlMappingLoader(yamlMapper);
             Hl7ToMapTransformer transformer = new Hl7ToMapTransformer();
             Hl7JsonBinder jsonBinder = new Hl7JsonBinder();

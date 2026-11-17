@@ -1,6 +1,8 @@
 package io.github.tdteixeira.hl7handler;
 
+import io.github.tdteixeira.hl7handler.api.Hl7Reader;
 import io.github.tdteixeira.hl7handler.mapping.Hl7MappingException;
+import io.github.tdteixeira.hl7handler.mapping.Hl7MappingValidator;
 import io.github.tdteixeira.hl7handler.mapping.Hl7ToMapTransformer;
 import io.github.tdteixeira.hl7handler.mapping.Hl7TypeConverter;
 import io.github.tdteixeira.hl7handler.mapping.Hl7VersionRange;
@@ -414,5 +416,201 @@ class Hl7MappingTest {
         assertThat(range.matches(Hl7Version.V2_5)).isTrue();
         assertThat(range.matches(Hl7Version.V2_6)).isTrue();
         assertThat(range.matches(Hl7Version.V2_7)).isFalse();
+    }
+
+    @Test
+    @DisplayName("Deve tratar grupo de negócio com valor e unidade como grupo e resolver cada campo da mensagem")
+    void shouldTreatBusinessGroupWithValorAndUnidadeAsGroup() {
+        String hl7 = "MSH|^~\\&|LAB|HOSP|REC|FAC|20261110120000||ORU^R01|MSG001|P|2.5\r"
+                + "PID|1||12345||SILVA^MARIA\r"
+                + "OBX|1|NM|GLU^GLICOSE^LN||95|mg/dL|70-99|N|||F\r";
+        Hl7Message message = Hl7Handler.reader().from(hl7).toMessage();
+
+        Map<String, Object> exame = new LinkedHashMap<>();
+        exame.put("valor", "OBX.5");
+        exame.put("unidade", "OBX.6");
+        Map<String, Object> mapping = new LinkedHashMap<>();
+        mapping.put("exame", exame);
+
+        Map<String, Object> result = new Hl7ToMapTransformer().transform(message, mapping);
+
+        assertThat(result.get("exame")).isInstanceOf(Map.class);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> exameResult = (Map<String, Object>) result.get("exame");
+        assertThat(exameResult.get("valor")).isEqualTo("95");
+        assertThat(exameResult.get("unidade")).isEqualTo("mg/dL");
+    }
+
+    @Test
+    @DisplayName("Deve tratar mapa somente com valor como constante")
+    void shouldTreatValorOnlyMapAsConstant() {
+        String hl7 = "MSH|^~\\&|LAB|HOSP|REC|FAC|20261110120000||ADT^A01|MSG001|P|2.5\r";
+        Hl7Message message = Hl7Handler.reader().from(hl7).toMessage();
+
+        Map<String, Object> constante = new LinkedHashMap<>();
+        constante.put("valor", "X");
+        Map<String, Object> mapping = new LinkedHashMap<>();
+        mapping.put("constante", constante);
+
+        Map<String, Object> result = new Hl7ToMapTransformer().transform(message, mapping);
+
+        assertThat(result.get("constante")).isEqualTo("X");
+    }
+
+    @Test
+    @DisplayName("Deve manter como diretiva de coordenada um mapa com hl7 e tipo texto")
+    void shouldKeepCoordinateWithTipoAsDirective() {
+        String hl7 = "MSH|^~\\&|LAB|HOSP|REC|FAC|20261110120000||ADT^A01|MSG001|P|2.5\r"
+                + "PID|1||12345||SILVA^MARIA\r";
+        Hl7Message message = Hl7Handler.reader().from(hl7).toMessage();
+
+        Map<String, Object> sobrenome = new LinkedHashMap<>();
+        sobrenome.put("hl7", "PID.5.1");
+        sobrenome.put("tipo", "texto");
+        Map<String, Object> mapping = new LinkedHashMap<>();
+        mapping.put("sobrenome", sobrenome);
+
+        Map<String, Object> result = new Hl7ToMapTransformer().transform(message, mapping);
+
+        assertThat(result.get("sobrenome")).isEqualTo("SILVA");
+    }
+
+    @Test
+    @DisplayName("Deve manter como diretiva de lista um mapa com list e item")
+    void shouldKeepListWithItemAsDirective() {
+        String hl7 = "MSH|^~\\&|LAB|HOSP|REC|FAC|20261110120000||ORU^R01|MSG001|P|2.5\r"
+                + "OBX|1|NM|GLU||95\r"
+                + "OBX|2|NM|HEMO||14.2\r";
+        Hl7Message message = Hl7Handler.reader().from(hl7).toMessage();
+
+        Map<String, Object> item = new LinkedHashMap<>();
+        item.put("codigo", "OBX.3.1");
+        Map<String, Object> lista = new LinkedHashMap<>();
+        lista.put("list", "OBX[*]");
+        lista.put("item", item);
+        Map<String, Object> mapping = new LinkedHashMap<>();
+        mapping.put("exames", lista);
+
+        Map<String, Object> result = new Hl7ToMapTransformer().transform(message, mapping);
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> exames = (List<Map<String, Object>>) result.get("exames");
+        assertThat(exames).hasSize(2);
+        assertThat(exames.get(0).get("codigo")).isEqualTo("GLU");
+        assertThat(exames.get(1).get("codigo")).isEqualTo("HEMO");
+    }
+
+    @Test
+    @DisplayName("Validação deve rejeitar coordenada inválida informando o caminho YAML")
+    void shouldRejectInvalidCoordinateOnLoad() {
+        Map<String, Object> paciente = new LinkedHashMap<>();
+        paciente.put("nome", "PID.x");
+        Map<String, Object> mapping = new LinkedHashMap<>();
+        mapping.put("paciente", paciente);
+
+        assertThatThrownBy(() -> Hl7MappingValidator.validate(mapping, Collections.<String>emptySet()))
+                .isInstanceOf(Hl7MappingException.class)
+                .hasMessage("Invalid HL7 coordinate 'PID.x' at 'paciente.nome'");
+    }
+
+    @Test
+    @DisplayName("Validação deve rejeitar especificação de lista inválida informando o caminho YAML")
+    void shouldRejectInvalidListSpecOnLoad() {
+        Map<String, Object> lista = new LinkedHashMap<>();
+        lista.put("lista", "OBX[x]");
+        lista.put("item", "OBX.5");
+        Map<String, Object> mapping = new LinkedHashMap<>();
+        mapping.put("exames", lista);
+
+        assertThatThrownBy(() -> Hl7MappingValidator.validate(mapping, Collections.<String>emptySet()))
+                .isInstanceOf(Hl7MappingException.class)
+                .hasMessage("Invalid HL7 list 'OBX[x]' at 'exames'");
+    }
+
+    @Test
+    @DisplayName("Validação deve rejeitar tipo desconhecido informando o caminho YAML")
+    void shouldRejectUnknownTypeOnLoad() {
+        Map<String, Object> campo = new LinkedHashMap<>();
+        campo.put("hl7", "PID.3");
+        campo.put("tipo", "maiusculo");
+        Map<String, Object> mapping = new LinkedHashMap<>();
+        mapping.put("campo", campo);
+
+        assertThatThrownBy(() -> Hl7MappingValidator.validate(mapping, Collections.<String>emptySet()))
+                .isInstanceOf(Hl7MappingException.class)
+                .hasMessage("Unknown type converter 'maiusculo' at 'campo'");
+    }
+
+    @Test
+    @DisplayName("Validação deve rejeitar faixa de versão inválida informando o caminho YAML")
+    void shouldRejectInvalidVersionRangeOnLoad() {
+        Map<String, Object> mapping = new LinkedHashMap<>();
+        mapping.put("versoes", ">=x.y");
+        mapping.put("id", "MSH.10");
+
+        assertThatThrownBy(() -> Hl7MappingValidator.validate(mapping, Collections.<String>emptySet()))
+                .isInstanceOf(Hl7MappingException.class)
+                .hasMessageStartingWith("Invalid version range '>=x.y' at 'versoes'");
+    }
+
+    @Test
+    @DisplayName("Validação deve validar sobreposições porVersao e informar o caminho da chave")
+    void shouldValidateVersionOverlayBodiesOnLoad() {
+        Map<String, Object> overlay = new LinkedHashMap<>();
+        overlay.put("pacienteId", "PID.x");
+        Map<String, Object> porVersao = new LinkedHashMap<>();
+        porVersao.put("<2.3.1", overlay);
+        Map<String, Object> mapping = new LinkedHashMap<>();
+        mapping.put("id", "MSH.10");
+        mapping.put("porVersao", porVersao);
+
+        assertThatThrownBy(() -> Hl7MappingValidator.validate(mapping, Collections.<String>emptySet()))
+                .isInstanceOf(Hl7MappingException.class)
+                .hasMessage("Invalid HL7 coordinate 'PID.x' at 'porVersao[<2.3.1].pacienteId'");
+    }
+
+    @Test
+    @DisplayName("Validação deve aceitar formas de coordenada usadas pelo transformer")
+    void shouldAcceptCoordinateFormsUsedByTransformer() {
+        Map<String, Object> item = new LinkedHashMap<>();
+        item.put("relativo", "1.2");
+        item.put("absoluto", "PID-3[1].1");
+        Map<String, Object> mapping = new LinkedHashMap<>();
+        mapping.put("evento", "@event");
+        mapping.put("paciente", "EVENT");
+        mapping.put("pacienteId", "@patientId");
+        mapping.put("obx", "OBX[2].5");
+        mapping.put("pid", "PID.13[*].1");
+        mapping.put("pidComHl7", Collections.singletonMap("hl7", "PID-5.2"));
+        Map<String, Object> lista = new LinkedHashMap<>();
+        lista.put("lista", "OBX.5[*]");
+        lista.put("item", item);
+        mapping.put("exames", lista);
+
+        Hl7MappingValidator.validate(mapping, Collections.<String>emptySet());
+    }
+
+    @Test
+    @DisplayName("Carregamento deve rejeitar chave YAML duplicada com Hl7MappingException")
+    void shouldRejectDuplicateYamlKeyOnLoad() {
+        String yaml = "mensagemId: MSH.10\n"
+                + "mensagemId: MSH.9\n";
+
+        assertThatThrownBy(() -> Hl7Handler.reader().withMappingContent(yaml))
+                .isInstanceOf(Hl7MappingException.class)
+                .hasMessageContaining("mensagemId");
+    }
+
+    @Test
+    @DisplayName("Os mapeamentos de exemplo do projeto devem carregar com a validação ativa")
+    void shouldLoadExistingMappingFixturesWithValidation() {
+        String paciente = TestResources.read("/mappings/paciente-mapping.yaml");
+        String multiversao = TestResources.read("/mappings/paciente-multiversao-mapping.yaml");
+
+        Hl7Reader pacienteReader = Hl7Handler.reader().withMappingContent(paciente);
+        Hl7Reader multiversaoReader = Hl7Handler.reader().withMappingContent(multiversao);
+
+        assertThat(pacienteReader).isNotNull();
+        assertThat(multiversaoReader).isNotNull();
     }
 }

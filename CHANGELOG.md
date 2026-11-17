@@ -8,6 +8,7 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [Não Lançado]
 
 ### Adicionado
+- Validação do mapeamento YAML no carregamento (`Hl7MappingValidator`): coordenadas, especificações de lista, tipos e faixas de `versoes`/`porVersao` inválidos, além de chaves YAML duplicadas (leitura com `STRICT_DUPLICATE_DETECTION`), lançam `Hl7MappingException` com o caminho do nó no YAML
 - Mapeamento YAML semântico avançado por versão com suporte a faixas (`Hl7VersionRange`), sobreposição hierárquica por especificidade (`porVersao`), validação de versões suportadas (`versoes`) e exceção especializada `Hl7MappingException`
 - Conversão tipada em mapeamentos YAML (`Hl7TypeConverter`) com suporte nativo a `texto`, `numero` (Long / Double), `data` (`Temporal` via `Hl7DateTime`), `booleano` (S/N, 1/0, SIM/NAO, TRUE/FALSE) e registro dinâmico de conversores customizados
 - Mapeamento de coleções e repetições para listas estruturadas a partir de segmentos múltiplos (`lista: "OBX[*]"`) e repetições de campos (`lista: "PID.13[*]"`), guiado por template de `item`
@@ -49,6 +50,7 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - Strategies de versão passam a ler os dados do perfil `.properties` (fonte única), incluindo as novas chaves `event.coordinate` e `patient_id.coordinate`
 
 ### Consertado
+- Mapa com chaves de negócio, como `exame: {valor: OBX.5, unidade: OBX.6}`, passa a ser lido como grupo e não mais como constante ou coordenada: uma mapa só é diretiva quando todas as suas chaves pertencem ao conjunto dela (`lista`/`list`/`item`, `valor`/`value`/`tipo`/`type`, `hl7`/`path`/`campo`/`fallback`/`padrao`/`tipo`/`type`)
 - `fromMshHeader` não invade campos subsequentes com MSH-2 curto
 - Eliminação de delimitadores fixos (`&` e `^`) no parser e modelo
 - `MllpStreamReader.readMessage` não perde mais o byte seguinte ao trailer entre chamadas consecutivas; em stream sem mark e sem pushback, trailer ausente vira `MllpFramingException`

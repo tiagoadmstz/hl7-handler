@@ -12,9 +12,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
@@ -25,7 +27,7 @@ import java.util.regex.Pattern;
  */
 public class Hl7ToMapTransformer {
 
-    private static final Pattern HL7_COORDINATE_PATTERN = Pattern.compile("^(@|[A-Za-z][A-Za-z0-9]{1,3}[.-]).*$");
+    static final Pattern HL7_COORDINATE_PATTERN = Pattern.compile("^(@|[A-Za-z][A-Za-z0-9]{1,3}[.-]).*$");
 
     private final boolean keepEmptyStrings;
     private final Map<String, Hl7TypeConverter> customConverters;
@@ -55,6 +57,15 @@ public class Hl7ToMapTransformer {
     }
 
     /**
+     * Returns the names of the custom converters registered on this transformer (lower-cased, unmodifiable).
+     *
+     * @return the custom converter names
+     */
+    public Set<String> getConverterNames() {
+        return Collections.unmodifiableSet(new LinkedHashSet<>(customConverters.keySet()));
+    }
+
+    /**
      * Transforms an HL7 message using the loaded YAML configuration.
      *
      * @param message the parsed HL7 message
@@ -81,11 +92,16 @@ public class Hl7ToMapTransformer {
         return processTemplateMap(message, null, 0, 0, baseTemplate);
     }
 
-    private void validateVersionConstraint(Hl7Version version, Map<String, Object> mappingConfig) {
+    static Object versionConstraintOf(Map<String, Object> mappingConfig) {
         Object versoesObj = mappingConfig.get("versoes");
         if (versoesObj == null) {
             versoesObj = mappingConfig.get("versions");
         }
+        return versoesObj;
+    }
+
+    private void validateVersionConstraint(Hl7Version version, Map<String, Object> mappingConfig) {
+        Object versoesObj = versionConstraintOf(mappingConfig);
         if (versoesObj != null) {
             String expr = String.valueOf(versoesObj).trim();
             if (!expr.isEmpty()) {
@@ -98,25 +114,27 @@ public class Hl7ToMapTransformer {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> extractBaseTemplate(Map<String, Object> mappingConfig) {
+        return deepCopyMap(rawBaseTemplate(mappingConfig));
+    }
+
+    @SuppressWarnings("unchecked")
+    static Map<String, Object> rawBaseTemplate(Map<String, Object> mappingConfig) {
         Object mappingsObj = mappingConfig.get("mappings");
         if (mappingsObj instanceof Map<?, ?>) {
-            return deepCopyMap((Map<?, ?>) mappingsObj);
+            return (Map<String, Object>) mappingsObj;
         }
 
         Map<String, Object> baseTemplate = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : mappingConfig.entrySet()) {
-            String key = entry.getKey();
-            if (isTopLevelMetadata(key)) {
-                continue;
+            if (!isTopLevelMetadata(entry.getKey())) {
+                baseTemplate.put(entry.getKey(), entry.getValue());
             }
-            baseTemplate.put(key, deepCopyValue(entry.getValue()));
         }
         return baseTemplate;
     }
 
-    private boolean isTopLevelMetadata(String key) {
+    static boolean isTopLevelMetadata(String key) {
         if (key == null) {
             return false;
         }
@@ -148,16 +166,23 @@ public class Hl7ToMapTransformer {
         }
     }
 
-    private void applyVersionOverlays(Hl7Version currentVersion, Map<String, Object> mappingConfig, Map<String, Object> target) {
+    static Map<?, ?> overlaysOf(Map<String, Object> mappingConfig) {
         Object porVersaoObj = mappingConfig.get("porVersao");
         if (porVersaoObj == null) {
             porVersaoObj = mappingConfig.get("byVersion");
         }
-        if (!(porVersaoObj instanceof Map<?, ?>)) {
+        if (porVersaoObj instanceof Map<?, ?>) {
+            return (Map<?, ?>) porVersaoObj;
+        }
+        return null;
+    }
+
+    private void applyVersionOverlays(Hl7Version currentVersion, Map<String, Object> mappingConfig, Map<String, Object> target) {
+        Map<?, ?> porVersaoMap = overlaysOf(mappingConfig);
+        if (porVersaoMap == null) {
             return;
         }
 
-        Map<?, ?> porVersaoMap = (Map<?, ?>) porVersaoObj;
         List<VersionOverlayRule> matchingRules = new ArrayList<>();
 
         for (Map.Entry<?, ?> entry : porVersaoMap.entrySet()) {
@@ -179,7 +204,7 @@ public class Hl7ToMapTransformer {
     }
 
     @SuppressWarnings("unchecked")
-    private void deepMerge(Map<String, Object> target, Map<?, ?> overlay) {
+    static void deepMerge(Map<String, Object> target, Map<?, ?> overlay) {
         for (Map.Entry<?, ?> entry : overlay.entrySet()) {
             String key = String.valueOf(entry.getKey());
             Object overlayVal = entry.getValue();
@@ -193,8 +218,7 @@ public class Hl7ToMapTransformer {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> deepCopyMap(Map<?, ?> map) {
+    static Map<String, Object> deepCopyMap(Map<?, ?> map) {
         Map<String, Object> copy = new LinkedHashMap<>();
         for (Map.Entry<?, ?> entry : map.entrySet()) {
             copy.put(String.valueOf(entry.getKey()), deepCopyValue(entry.getValue()));
@@ -202,8 +226,7 @@ public class Hl7ToMapTransformer {
         return copy;
     }
 
-    @SuppressWarnings("unchecked")
-    private Object deepCopyValue(Object value) {
+    static Object deepCopyValue(Object value) {
         if (value instanceof Map<?, ?>) {
             return deepCopyMap((Map<?, ?>) value);
         }
@@ -237,9 +260,10 @@ public class Hl7ToMapTransformer {
     private Object evaluateNode(Hl7Message message, Hl7Segment contextSeg, int repField, int repNum, Object node) {
         if (node instanceof Map<?, ?>) {
             Map<String, Object> mapNode = (Map<String, Object>) node;
+            Hl7DirectiveKind kind = Hl7DirectiveKind.classify(mapNode);
 
             // 1. List mapping directive (lista / list)
-            if (mapNode.containsKey("lista") || mapNode.containsKey("list")) {
+            if (kind == Hl7DirectiveKind.LIST) {
                 Object listSpecObj = mapNode.containsKey("lista") ? mapNode.get("lista") : mapNode.get("list");
                 String listSpec = String.valueOf(listSpecObj);
                 Object itemTemplate = mapNode.get("item");
@@ -247,7 +271,7 @@ public class Hl7ToMapTransformer {
             }
 
             // 2. Constant value directive (valor / value)
-            if (mapNode.containsKey("valor") || mapNode.containsKey("value")) {
+            if (kind == Hl7DirectiveKind.CONSTANT) {
                 Object val = mapNode.containsKey("valor") ? mapNode.get("valor") : mapNode.get("value");
                 if (mapNode.containsKey("tipo") || mapNode.containsKey("type")) {
                     String typeName = String.valueOf(mapNode.containsKey("tipo") ? mapNode.get("tipo") : mapNode.get("type"));
@@ -257,10 +281,16 @@ public class Hl7ToMapTransformer {
             }
 
             // 3. HL7 coordinate directive (hl7 / path / campo)
-            if (mapNode.containsKey("hl7") || mapNode.containsKey("path") || mapNode.containsKey("campo")) {
-                String hl7Path = String.valueOf(
-                        mapNode.containsKey("hl7") ? mapNode.get("hl7") : (mapNode.containsKey("path") ? mapNode.get("path") : mapNode.get("campo"))
-                );
+            if (kind == Hl7DirectiveKind.COORDINATE) {
+                Object coordinateObj;
+                if (mapNode.containsKey("hl7")) {
+                    coordinateObj = mapNode.get("hl7");
+                } else if (mapNode.containsKey("path")) {
+                    coordinateObj = mapNode.get("path");
+                } else {
+                    coordinateObj = mapNode.get("campo");
+                }
+                String hl7Path = String.valueOf(coordinateObj);
                 String raw = resolveHl7Path(message, contextSeg, repField, repNum, hl7Path);
 
                 if ((raw == null || raw.isEmpty()) && (mapNode.containsKey("fallback") || mapNode.containsKey("padrao"))) {
