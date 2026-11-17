@@ -299,3 +299,31 @@ byte[] ackMllpBytes = Hl7Handler.network().wrap("MSH|^~\\&|...|ACK^A01|...");
 
 - `wrap` codifica a mensagem com o charset do MSH-18 (UTF-8 quando ausente). MLLP sobre UTF-16 não é suportado.
 - Para ler várias mensagens chamando `readMessage` em sequência, passe um `PushbackInputStream` (ou um stream com `mark`) ou use `readAll`. Num stream comum, um quadro sem o `<CR>` final lança `MllpFramingException` em vez de perder bytes.
+
+---
+
+### Uso em aplicações (Hl7Processor)
+
+Em aplicações, crie o `Hl7Processor` uma vez (bean singleton ou campo `static final`) e reutilize-o em todas as leituras:
+
+```java
+private static final Hl7Processor PROCESSOR = Hl7Handler.builder()
+    .withMapping(new File("caminho/para/meu-mapeamento.yaml"))
+    .build();
+
+PacienteVO vo = PROCESSOR.read(rawHl7).bindTo(PacienteVO.class);
+```
+
+- O `Hl7Processor` é imutável e thread-safe: uma única instância pode atender várias threads sem sincronização.
+- Cada `read` faz o parse da mensagem uma única vez. `toJson()`, `toMap()` e `bindTo(...)` usam o mesmo resultado, e o mapa mapeado é calculado uma vez e mantido em cache.
+- `readBytes(byte[])` aceita bytes com ou sem moldura MLLP, e `readMllp(InputStream)` lê um quadro por chamada, devolvendo `null` no fim do stream.
+
+### Erros
+
+Todas as exceções da biblioteca estendem `Hl7Exception`, que é não verificada (`RuntimeException`):
+
+- `Hl7Exception`: classe base, no pacote raiz `io.github.tdteixeira.hl7handler`.
+- `Hl7ParseException`: entrada ausente ou em branco e falha de leitura MLLP.
+- `Hl7BindingException`: falha de serialização ou desserialização JSON, inclusive no `bindTo`.
+- `Hl7MappingException` (pacote `mapping`): mapeamento YAML inválido ou ausente.
+- `MllpFramingException` (pacote `network`): moldura MLLP violada (truncada, sem `0x0B` ou acima do limite de tamanho).

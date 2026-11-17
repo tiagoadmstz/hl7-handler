@@ -4,6 +4,7 @@ import module java.base;
 
 import io.github.tdteixeira.hl7handler.Hl7Handler;
 import io.github.tdteixeira.hl7handler.model.Hl7Message;
+import io.github.tdteixeira.hl7handler.network.MllpFramingException;
 import io.github.tdteixeira.hl7handler.network.MllpStreamReader;
 
 /**
@@ -72,7 +73,7 @@ public class MockMllpServer implements AutoCloseable {
                 out.write(ackFrame);
                 out.flush();
             }
-        } catch (IOException ignored) {}
+        } catch (IOException | MllpFramingException ignored) {}
     }
 
     public int getPort() {

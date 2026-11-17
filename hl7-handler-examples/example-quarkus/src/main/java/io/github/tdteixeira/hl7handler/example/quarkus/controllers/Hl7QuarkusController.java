@@ -66,13 +66,7 @@ public class Hl7QuarkusController {
                     .build();
         }
 
-        try {
-            PacienteVO vo = patientService.parseToPatientVo(rawHl7);
-            return Response.ok(vo).build();
-        } catch (Exception exception) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("{\"error\": \"" + exception.getMessage() + "\"}")
-                    .build();
-        }
+        PacienteVO vo = patientService.parseToPatientVo(rawHl7);
+        return Response.ok(vo).build();
     }
 }

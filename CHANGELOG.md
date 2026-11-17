@@ -58,6 +58,7 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - Nos artefatos de Java 8 e 11, `Hl7Delimiters` é uma classe final (no core continua `record`)
 - Strategies de versão passam a ler os dados do perfil `.properties` (fonte única), incluindo as novas chaves `event.coordinate` e `patient_id.coordinate`
 - `DefaultHl7Parser` e `Hl7VersionDetector` deixam de usar `String.split` com regex: linhas, campos, repetições, componentes e subcomponentes são separados por varredura de caracteres (`indexOf`), com o mesmo resultado (campos vazios no fim são mantidos); o tempo do parser cai de 54% a 73% (ver a seção Desempenho do README)
+- Exemplos Spring Boot e Quarkus usam um `Hl7Processor` singleton por arquivo de mapeamento, criado uma vez e reutilizado em cada mensagem
 
 ### Consertado
 - Mapa com chaves de negócio, como `exame: {valor: OBX.5, unidade: OBX.6}`, passa a ser lido como grupo e não mais como constante ou coordenada: uma mapa só é diretiva quando todas as suas chaves pertencem ao conjunto dela (`lista`/`list`/`item`, `valor`/`value`/`tipo`/`type`, `hl7`/`path`/`campo`/`fallback`/`padrao`/`tipo`/`type`)

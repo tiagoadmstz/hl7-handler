@@ -49,11 +49,6 @@ public class Hl7SpringController {
 
     @PostMapping(value = "/patient-vo", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PacienteVO> parseToPatientVo(@RequestBody String rawHl7) {
-        try {
-            PacienteVO vo = patientService.parseToPatientVo(rawHl7);
-            return ResponseEntity.ok(vo);
-        } catch (Exception exception) {
-            return ResponseEntity.badRequest().build();
-        }
+        return ResponseEntity.ok(patientService.parseToPatientVo(rawHl7));
     }
 }

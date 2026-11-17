@@ -5,29 +5,35 @@ import module java.base;
 import org.springframework.stereotype.Service;
 
 import io.github.tdteixeira.hl7handler.Hl7Handler;
-import io.github.tdteixeira.hl7handler.api.Hl7Reader;
+import io.github.tdteixeira.hl7handler.api.Hl7Processor;
+import io.github.tdteixeira.hl7handler.api.Hl7Result;
 
 @Service
 public class HL7SpringService {
 
+    private final Map<String, Hl7Processor> processors = new ConcurrentHashMap<>();
+
     public <T extends Object> T processHL7Message(String message, String mappingFile, Class<T> mappingClass) {
         validateInputs(message, mappingFile, mappingClass);
+        Hl7Result result = processorFor(mappingFile).read(message);
         if (mappingClass == String.class) {
-            return (T) processHL7Message(message, mappingFile).toJson();
+            return (T) result.toJson();
         }
-        return processHL7Message(message, mappingFile).bindTo(mappingClass);
+        return result.bindTo(mappingClass);
     }
 
-    private Hl7Reader processHL7Message(String message, String mappingFile) {
+    private Hl7Processor processorFor(String mappingFile) {
+        return processors.computeIfAbsent(mappingFile, this::loadProcessor);
+    }
+
+    private Hl7Processor loadProcessor(String mappingFile) {
         try (InputStream mapping = getClass().getResourceAsStream(mappingFile)) {
             if (mapping == null) {
                 throw new IllegalArgumentException("Mapping file not found: " + mappingFile);
             }
-            return Hl7Handler.reader()
-                    .from(message)
-                    .withMapping(mapping);
-        } catch (Exception exception) {
-            throw new RuntimeException("Error processing HL7 message", exception);
+            return Hl7Handler.builder().withMapping(mapping).build();
+        } catch (IOException exception) {
+            throw new UncheckedIOException("Error closing mapping file: " + mappingFile, exception);
         }
     }
 
