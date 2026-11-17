@@ -15,7 +15,7 @@ public class Hl7ExceptionMapper implements ExceptionMapper<Hl7Exception> {
     public Response toResponse(final Hl7Exception exception) {
         return Response.status(Response.Status.BAD_REQUEST)
                 .type(MediaType.APPLICATION_JSON)
-                .entity(Map.of("error", exception.getMessage()))
+                .entity(new ErrorResponse(exception.getMessage()))
                 .build();
     }
 }

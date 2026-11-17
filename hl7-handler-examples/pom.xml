@@ -23,6 +23,7 @@
     <modules>
         <module>example-stub</module>
         <module>example-pure-java</module>
+        <module>example-pure-java8</module>
         <module>example-spring</module>
         <module>example-quarkus</module>
     </modules>

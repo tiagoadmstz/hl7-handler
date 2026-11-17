@@ -11,6 +11,15 @@ import jakarta.enterprise.context.ApplicationScoped;
 public class HL7QuarkusService {
 
     private final Map<String, Hl7Processor> processors = new ConcurrentHashMap<>();
+    private final Hl7Processor plainProcessor = Hl7Handler.builder().build();
+
+    public String generateAck(final String rawHl7) {
+        if (rawHl7 == null || rawHl7.isEmpty()) {
+            throw new IllegalArgumentException("HL7 message not provided");
+        }
+        Hl7Result result = plainProcessor.read(rawHl7);
+        return Hl7Handler.generateAck(result.message());
+    }
 
     @SuppressWarnings("unchecked")
     public <T> T processHL7Message(final String message, final String mappingFile, final Class<T> mappingClass) {

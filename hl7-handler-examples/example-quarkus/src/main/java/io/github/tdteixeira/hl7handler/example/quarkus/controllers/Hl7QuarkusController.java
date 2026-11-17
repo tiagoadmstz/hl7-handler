@@ -1,5 +1,6 @@
 package io.github.tdteixeira.hl7handler.example.quarkus.controllers;
 
+import io.github.tdteixeira.hl7handler.example.quarkus.services.HL7QuarkusService;
 import io.github.tdteixeira.hl7handler.example.quarkus.services.LaboryService;
 import io.github.tdteixeira.hl7handler.example.quarkus.services.PatientService;
 import io.github.tdteixeira.hl7handler.example.stub.model.PacienteVO;
@@ -18,13 +19,16 @@ public class Hl7QuarkusController {
 
     private final PatientService patientService;
     private final LaboryService laboryService;
+    private final HL7QuarkusService hl7QuarkusService;
 
     public Hl7QuarkusController(
             final PatientService patientService,
-            final LaboryService laboryService
+            final LaboryService laboryService,
+            final HL7QuarkusService hl7QuarkusService
     ) {
         this.patientService = patientService;
         this.laboryService = laboryService;
+        this.hl7QuarkusService = hl7QuarkusService;
     }
 
     @GET
@@ -36,7 +40,7 @@ public class Hl7QuarkusController {
             return Response.ok(json).build();
         } catch (Exception exception) {
             return Response.serverError()
-                    .entity("{\"error\": \"" + exception.getMessage() + "\"}")
+                    .entity(new ErrorResponse(exception.getMessage()))
                     .build();
         }
     }
@@ -50,7 +54,7 @@ public class Hl7QuarkusController {
             return Response.ok(json).build();
         } catch (Exception exception) {
             return Response.serverError()
-                    .entity("{\"error\": \"" + exception.getMessage() + "\"}")
+                    .entity(new ErrorResponse(exception.getMessage()))
                     .build();
         }
     }
@@ -62,11 +66,19 @@ public class Hl7QuarkusController {
     public Response parseToPatientVo(final String rawHl7) {
         if (rawHl7 == null || rawHl7.isBlank()) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("{\"error\": \"HL7 payload cannot be empty\"}")
+                    .entity(new ErrorResponse("HL7 payload cannot be empty"))
                     .build();
         }
 
         PacienteVO vo = patientService.parseToPatientVo(rawHl7);
         return Response.ok(vo).build();
+    }
+
+    @POST
+    @Path("/ack")
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.TEXT_PLAIN)
+    public String generateAck(final String rawHl7) {
+        return hl7QuarkusService.generateAck(rawHl7);
     }
 }

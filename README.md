@@ -93,6 +93,7 @@ hl7-handler/
 └── hl7-handler-examples/                    <- Módulo ignorado no build padrão (-Pexamples)
     ├── example-stub/                        <- Stubs, Mocks, VOs compartilhados e MockMllpServer
     ├── example-pure-java/                   <- Exemplo executável em Java puro
+    ├── example-pure-java8/                  <- Exemplo em Java 8 (hl7-handler-java8)
     ├── example-spring/                      <- Exemplo API REST com Spring Boot
     └── example-quarkus/                     <- Exemplo API REST com Quarkus
 ```
@@ -154,6 +155,12 @@ Executa a demonstração em console, realizando parse, binding e comunicação v
 ./mvnw exec:java -pl hl7-handler-examples/example-pure-java -Dexec.mainClass="io.github.tdteixeira.hl7handler.example.pure.PureJavaExample" -Pexamples
 ```
 
+Além do parse, do binding e do ACK pelo socket, a demonstração roda três casos:
+
+1. **Laboratório**: ORU_R01 2.5 com seis OBX, lidos em uma lista com `lista: "OBX[*]"`, cada item com código, descrição, valor numérico, unidade e referência.
+2. **Monitor 2.6**: sinais vitais com `MSH-18` `UNICODE UTF-8`, `MSH-3` com componentes e timestamps DTM. O exemplo gera o ACK e mostra `MSA-1`, `MSH-9` e `MSA-2`.
+3. **Legado 2.3**: ADT_A01 com o ID do paciente em `PID-2`. O mapeamento usa `porVersao: "<2.3.1"` para ler `PID.2.1`; o mesmo arquivo é aplicado a um 2.5 e lê `PID.3.1`.
+
 ---
 
 ### 2. Exemplo Spring Boot (API REST)
@@ -171,6 +178,24 @@ Inicia o servidor Spring Boot na porta `8080`:
   * `GET http://localhost:8080/api/hl7/sample-patient` — Retorna o JSON semântico traduzido do paciente (`ADT_A01`).
   * `GET http://localhost:8080/api/hl7/sample-lab` — Retorna o JSON semântico do laudo laboratorial (`ORU_R01`).
   * `POST http://localhost:8080/api/hl7/patient-vo` — Recebe texto bruto HL7 (`text/plain`) e devolve o `PacienteVO` tipado.
+  * `POST http://localhost:8080/api/hl7/ack` — Recebe texto bruto HL7 (`text/plain`) e devolve o ACK em `text/plain`.
+
+#### Exemplo de ACK
+
+Salve a mensagem em `mensagem.hl7` (um segmento por linha) e envie:
+
+```bash
+curl -X POST http://localhost:8080/api/hl7/ack \
+  -H "Content-Type: text/plain" \
+  --data-binary @mensagem.hl7
+```
+
+```
+MSH|^~\&|APP_ORIGEM|HOSP_FICT|APP_DESTINO|HOSP_FICT|20261117090000||ADT^A01|MSG-FICT-1|P|2.5
+PID|1||555010^^^HOSP_FICT^MR||PACIENTE^FICTICIO
+```
+
+No ACK devolvido, `MSA-1` é `AA`, `MSA-2` é `MSG-FICT-1`, e `MSH-3`/`MSH-4` são os `MSH-5`/`MSH-6` da mensagem enviada (`APP_DESTINO` e `HOSP_FICT`).
 
 ---
 
@@ -190,6 +215,30 @@ Inicia o Quarkus em modo desenvolvimento (Live Coding) na porta `8080`:
   * `GET http://localhost:8080/api/hl7/sample-patient`
   * `GET http://localhost:8080/api/hl7/sample-lab`
   * `POST http://localhost:8080/api/hl7/patient-vo`
+  * `POST http://localhost:8080/api/hl7/ack` — Recebe texto bruto HL7 (`text/plain`) e devolve o ACK em `text/plain`.
+
+---
+
+### 4. Exemplo Java 8 (executado em JDK 8)
+Usa o artefato `hl7-handler-java8` (Java 8, Jackson 2) e roda os mesmos três casos do exemplo Java puro. O código é Java 8: sem `var`, sem `List.of` e com imports explícitos. O módulo não depende do `example-stub`, porque o stub é compilado em Java 25; por isso as amostras e os mapeamentos ficam em `src/main/resources`.
+
+O Maven monta o classpath (em Java 17 ou superior) e a execução usa um JDK 8 apontado em `JAVA8_HOME`:
+
+```powershell
+# Windows (PowerShell)
+.\mvnw.cmd install -Pexamples -pl hl7-handler-examples/example-pure-java8 -am
+.\mvnw.cmd dependency:build-classpath -pl hl7-handler-examples/example-pure-java8 -Dmdep.outputFile=target/classpath.txt -Pexamples
+$cp = Get-Content hl7-handler-examples\example-pure-java8\target\classpath.txt
+& "$env:JAVA8_HOME\bin\java" -cp "hl7-handler-examples\example-pure-java8\target\classes;$cp" io.github.tdteixeira.hl7handler.example.java8.PureJava8Example
+```
+
+```bash
+# Linux / macOS
+./mvnw install -Pexamples -pl hl7-handler-examples/example-pure-java8 -am
+./mvnw dependency:build-classpath -pl hl7-handler-examples/example-pure-java8 -Dmdep.outputFile=target/classpath.txt -Pexamples
+CP=$(cat hl7-handler-examples/example-pure-java8/target/classpath.txt)
+"$JAVA8_HOME/bin/java" -cp "hl7-handler-examples/example-pure-java8/target/classes:$CP" io.github.tdteixeira.hl7handler.example.java8.PureJava8Example
+```
 
 ---
 

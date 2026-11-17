@@ -69,6 +69,34 @@ public class PureJavaExample {
             }
         }
 
+        // 5. Laboratório: um item por OBX com lista: "OBX[*]"
+        System.out.println("\n5. Laboratório: ORU_R01 2.5 com lista OBX[*]");
+        executarCasoMapeado(Hl7MockData.ORU_R01_HEMOGRAMA_V25, "/mappings/laboratorio-resultados-mapping.yaml");
+
+        // 6. Monitor 2.6: UTF-8 em MSH-18, DTM e ACK gerado a partir da mensagem recebida
+        System.out.println("\n6. Monitor multiparamétrico: ORU_R01 2.6 e ACK");
+        Hl7Message monitor = Hl7Handler.reader().from(Hl7MockData.ORU_R01_MONITOR_V26).toMessage();
+        System.out.println("   Versão: " + monitor.getVersion() + " | MSH-18: " + monitor.get("MSH.18"));
+        executarCasoMapeado(Hl7MockData.ORU_R01_MONITOR_V26, "/mappings/monitor-sinais-vitais-mapping.yaml");
+        String ackMonitor = Hl7Handler.generateAck(monitor);
+        Hl7Message ackMonitorMsg = Hl7Handler.reader().from(ackMonitor).toMessage();
+        System.out.println("   ACK: MSA-1=" + ackMonitorMsg.get("MSA.1") + " | MSH-9=" + ackMonitorMsg.get("MSH.9")
+                + " | MSA-2=" + ackMonitorMsg.get("MSA.2"));
+
+        // 7. Legado 2.3: ID em PID-2, com porVersao aplicado no 2.3 e no 2.5 com o mesmo arquivo
+        System.out.println("\n7. Legado: ADT_A01 2.3 (ID em PID-2) e 2.5 com o mesmo mapeamento");
+        executarCasoMapeado(Hl7MockData.ADT_A01_V23_PID2, "/mappings/admissao-legado-mapping.yaml");
+        executarCasoMapeado(Hl7MockData.ADT_A01_V25, "/mappings/admissao-legado-mapping.yaml");
+
         System.out.println("\nExecução finalizada com sucesso!");
+    }
+
+    private static void executarCasoMapeado(String rawHl7, String mapeamento) throws IOException {
+        Hl7Message mensagem = Hl7Handler.reader().from(rawHl7).toMessage();
+        System.out.println("   Versão: " + mensagem.getVersion());
+        try (InputStream mapping = PureJavaExample.class.getResourceAsStream(mapeamento)) {
+            String json = Hl7Handler.reader().from(rawHl7).withMapping(mapping).toJson();
+            System.out.println("   JSON: " + json);
+        }
     }
 }

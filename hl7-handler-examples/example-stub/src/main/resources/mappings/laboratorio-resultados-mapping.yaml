@@ -1,0 +1,15 @@
+version: "2.5"
+description: "Resultados laboratoriais em lista (ORU_R01): um item por OBX"
+mappings:
+  idMensagem: "MSH.10"
+  prontuario: "PID.3.1"
+  resultados:
+    lista: "OBX[*]"
+    item:
+      codigo: "3.1"
+      descricao: "3.2"
+      valor:
+        hl7: "5"
+        tipo: numero
+      unidade: "6"
+      referencia: "7"

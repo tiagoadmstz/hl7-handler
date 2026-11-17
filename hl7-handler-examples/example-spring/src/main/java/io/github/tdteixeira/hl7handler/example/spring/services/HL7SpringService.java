@@ -12,6 +12,15 @@ import io.github.tdteixeira.hl7handler.api.Hl7Result;
 public class HL7SpringService {
 
     private final Map<String, Hl7Processor> processors = new ConcurrentHashMap<>();
+    private final Hl7Processor plainProcessor = Hl7Handler.builder().build();
+
+    public String generateAck(String rawHl7) {
+        if (rawHl7 == null || rawHl7.isEmpty()) {
+            throw new IllegalArgumentException("HL7 message not provided");
+        }
+        Hl7Result result = plainProcessor.read(rawHl7);
+        return Hl7Handler.generateAck(result.message());
+    }
 
     public <T extends Object> T processHL7Message(String message, String mappingFile, Class<T> mappingClass) {
         validateInputs(message, mappingFile, mappingClass);
