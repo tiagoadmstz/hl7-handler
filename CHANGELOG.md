@@ -51,6 +51,10 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ### Consertado
 - `fromMshHeader` não invade campos subsequentes com MSH-2 curto
 - Eliminação de delimitadores fixos (`&` e `^`) no parser e modelo
+- `MllpStreamReader.readMessage` não perde mais o byte seguinte ao trailer entre chamadas consecutivas; em stream sem mark e sem pushback, trailer ausente vira `MllpFramingException`
+- `MllpStreamReader` ignora LF (0x0A) e CR fora de uma mensagem, em vez de lançar exceção com `requireFraming` ativo
+- `Hl7AckGenerator` escapa o texto da MSA-3 e copia MSH-3 a MSH-6 e MSA-2 em forma crua, preservando componentes
+- `MllpStreamReader.wrap` respeita o charset do MSH-18 em vez de usar sempre o charset padrão
 
 ### Removido
 - Dependências não usadas `commons-lang3` e `commons-collections4`

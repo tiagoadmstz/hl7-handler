@@ -8,6 +8,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Utility for reading and converting HL7 network byte streams,
@@ -24,6 +25,8 @@ public class MllpStreamReader {
     public static final byte START_BLOCK = 0x0B;
     public static final byte END_BLOCK = 0x1C;
     public static final byte TRAILER = 0x0D;
+
+    private static final byte LINE_FEED = 0x0A;
 
     public static final int DEFAULT_MAX_MESSAGE_SIZE = 1024 * 1024; // 1 MB
 
@@ -71,18 +74,18 @@ public class MllpStreamReader {
             return null;
         }
 
-        PushbackInputStream pbin = (in instanceof PushbackInputStream)
-                ? (PushbackInputStream) in
-                : new PushbackInputStream(in, 2);
-
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         int b;
         boolean inMessage = false;
 
-        while ((b = pbin.read()) != -1) {
+        while ((b = in.read()) != -1) {
             byte current = (byte) b;
 
             if (!inMessage) {
+                if (current == TRAILER || current == LINE_FEED) {
+                    continue;
+                }
+
                 if (current == START_BLOCK) {
                     inMessage = true;
                     continue;
@@ -100,11 +103,7 @@ public class MllpStreamReader {
             }
 
             if (current == END_BLOCK) {
-                int next = pbin.read();
-                if (next != -1 && next != TRAILER) {
-                    // Not trailer: return byte back to the stream so the next message is preserved
-                    pbin.unread(next);
-                }
+                consumeTrailer(in);
 
                 byte[] rawBytes = buffer.toByteArray();
                 Charset charset = Hl7Charsets.detectCharset(rawBytes, defaultCharset);
@@ -131,6 +130,37 @@ public class MllpStreamReader {
         }
 
         return null;
+    }
+
+    /**
+     * Consumes the optional 0x0D trailer that follows an end block, without losing any other byte.
+     * A PushbackInputStream is unread, a mark-capable stream is reset, and any other stream
+     * must be at EOF or positioned on the trailer, otherwise a framing exception is thrown.
+     */
+    private static void consumeTrailer(InputStream in) throws IOException {
+        if (in instanceof PushbackInputStream) {
+            PushbackInputStream pushback = (PushbackInputStream) in;
+            int next = pushback.read();
+            if (next != -1 && next != TRAILER) {
+                pushback.unread(next);
+            }
+            return;
+        }
+
+        if (in.markSupported()) {
+            in.mark(1);
+            if (in.read() != TRAILER) {
+                in.reset();
+            }
+            return;
+        }
+
+        int next = in.read();
+        if (next != -1 && next != TRAILER) {
+            throw new MllpFramingException(
+                    "Missing MLLP trailer (0x0D) after end block; wrap the stream in a PushbackInputStream or use readAll"
+            );
+        }
     }
 
     /**
@@ -164,14 +194,16 @@ public class MllpStreamReader {
     }
 
     /**
-     * Wraps an HL7 message string into standard MLLP framed byte array using the detected or default encoding.
+     * Wraps an HL7 message string into a standard MLLP framed byte array. The payload is encoded
+     * with the charset named in MSH-18, or with the default charset when MSH-18 is absent or blank.
+     * MLLP over UTF-16 is not supported, because its code units can contain the 0x0B, 0x1C and 0x0D control bytes.
      */
     public byte[] wrap(String hl7Message) {
         if (hl7Message == null) {
             hl7Message = "";
         }
 
-        byte[] payload = hl7Message.getBytes(defaultCharset);
+        byte[] payload = hl7Message.getBytes(charsetFromMsh18(hl7Message));
         byte[] framed = new byte[payload.length + 3];
 
         framed[0] = START_BLOCK;
@@ -180,6 +212,28 @@ public class MllpStreamReader {
         framed[framed.length - 1] = TRAILER;
 
         return framed;
+    }
+
+    private Charset charsetFromMsh18(String hl7) {
+        String msh = null;
+        for (String line : hl7.split("\r\n|\r|\n")) {
+            if (line.startsWith("MSH")) {
+                msh = line;
+                break;
+            }
+        }
+        if (msh == null || msh.length() < 4) {
+            return defaultCharset;
+        }
+
+        String[] tokens = msh.split(Pattern.quote(String.valueOf(msh.charAt(3))), -1);
+        if (tokens.length <= 17) {
+            return defaultCharset;
+        }
+
+        char componentSeparator = tokens[1].isEmpty() ? '^' : tokens[1].charAt(0);
+        String msh18 = tokens[17].split(Pattern.quote(String.valueOf(componentSeparator)), -1)[0];
+        return Hl7Charsets.fromMsh18(msh18, defaultCharset);
     }
 
     /**

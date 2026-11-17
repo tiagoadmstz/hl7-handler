@@ -1,12 +1,15 @@
 package io.github.tdteixeira.hl7handler.network;
 
 import io.github.tdteixeira.hl7handler.model.Hl7Delimiters;
+import io.github.tdteixeira.hl7handler.model.Hl7Escapes;
 import io.github.tdteixeira.hl7handler.model.Hl7Message;
+import io.github.tdteixeira.hl7handler.model.Hl7Segment;
 import io.github.tdteixeira.hl7handler.model.Hl7Version;
 import io.github.tdteixeira.hl7handler.version.Hl7VersionStrategy;
 import io.github.tdteixeira.hl7handler.version.Hl7VersionStrategyRegistry;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 /**
  * Generates version-aware HL7 v2 ACK (Acknowledgment) messages.
@@ -43,10 +46,10 @@ public final class Hl7AckGenerator {
             rawVersion = incomingMessage.getVersion().getIdentifier();
         }
 
-        String incomingSendingApp = incomingMessage.get("MSH.3");
-        String incomingSendingFacility = incomingMessage.get("MSH.4");
-        String incomingReceivingApp = incomingMessage.get("MSH.5");
-        String incomingReceivingFacility = incomingMessage.get("MSH.6");
+        String incomingSendingApp = rawMshField(incomingMessage, 3);
+        String incomingSendingFacility = rawMshField(incomingMessage, 4);
+        String incomingReceivingApp = rawMshField(incomingMessage, 5);
+        String incomingReceivingFacility = rawMshField(incomingMessage, 6);
 
         String ackSendingApp = incomingReceivingApp.isEmpty() ? "HL7_HANDLER" : incomingReceivingApp;
         String ackSendingFacility = incomingReceivingFacility.isEmpty() ? "LOCAL" : incomingReceivingFacility;
@@ -112,11 +115,20 @@ public final class Hl7AckGenerator {
 
         StringBuilder msa = new StringBuilder("MSA");
         msa.append(fs).append(ackCode != null ? ackCode : "AA");
-        msa.append(fs).append(incomingControlId);
-        if (textMessage != null && !textMessage.isEmpty()) {
-            msa.append(fs).append(textMessage);
+        msa.append(fs).append(rawMshField(incomingMessage, 10));
+        String encodedText = Hl7Escapes.encode(textMessage, delims);
+        if (encodedText != null && !encodedText.isEmpty()) {
+            msa.append(fs).append(encodedText);
         }
 
         return msh.toString() + "\r" + msa.toString() + "\r";
+    }
+
+    private static String rawMshField(Hl7Message message, int field1Based) {
+        List<Hl7Segment> msh = message.getSegments("MSH");
+        if (msh.isEmpty()) {
+            return "";
+        }
+        return msh.get(0).getField(field1Based).getRawValue(1);
     }
 }
