@@ -1,5 +1,7 @@
 # HL7 Handler (`hl7-handler`)
 
+[![CI](https://github.com/tiagoadmstz/hl7-handler/actions/workflows/ci.yml/badge.svg)](https://github.com/tiagoadmstz/hl7-handler/actions/workflows/ci.yml)
+
 Biblioteca Java de alta performance, desacoplada e extensível para **leitura, escrita, detecção de versão e data binding de mensagens HL7 v2**, com suporte a framing de rede MLLP e de-para semântico orientado a **YAML externo**.
 
 ---
@@ -42,9 +44,61 @@ A biblioteca é publicada em três artefatos com a mesma API (mesmo pacote `io.g
 <dependency>
     <groupId>io.github.tiagoadmstz.hl7handler</groupId>
     <artifactId>hl7-handler-core</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
 </dependency>
 ```
+
+---
+
+## 📥 Instalação
+
+Os artefatos são publicados no GitHub Packages, que exige autenticação mesmo para leitura. Declare o repositório no `pom.xml` do projeto:
+
+```xml
+<repositories>
+    <repository>
+        <id>github</id>
+        <url>https://maven.pkg.github.com/tiagoadmstz/hl7-handler</url>
+        <snapshots>
+            <enabled>false</enabled>
+        </snapshots>
+    </repository>
+</repositories>
+```
+
+No `~/.m2/settings.xml`, configure o servidor `github` com um token de acesso pessoal com escopo `read:packages`. Use a variável de ambiente em vez de gravar o token no arquivo:
+
+```xml
+<servers>
+    <server>
+        <id>github</id>
+        <username>SEU_USUARIO_GITHUB</username>
+        <password>${env.GITHUB_TOKEN}</password>
+    </server>
+</servers>
+```
+
+Adicione o artefato correspondente à versão do Java do projeto (ver a tabela acima):
+
+```xml
+<dependency>
+    <groupId>io.github.tiagoadmstz.hl7handler</groupId>
+    <artifactId>hl7-handler-core</artifactId>
+    <version>0.1.0</version>
+</dependency>
+<dependency>
+    <groupId>io.github.tiagoadmstz.hl7handler</groupId>
+    <artifactId>hl7-handler-java11</artifactId>
+    <version>0.1.0</version>
+</dependency>
+<dependency>
+    <groupId>io.github.tiagoadmstz.hl7handler</groupId>
+    <artifactId>hl7-handler-java8</artifactId>
+    <version>0.1.0</version>
+</dependency>
+```
+
+Cada projeto usa apenas um deles.
 
 ---
 

@@ -153,6 +153,21 @@ void shouldParseHl7V25Message() {
 - ♿ **Acessibilidade**: melhorar tratamento de erros e mensagens
 - 🧪 **Testes**: cobertura adicional
 
+## 🏷️ Como lançar uma versão
+
+Lançamentos são feitos pelo mantenedor. A publicação é automatizada pelo workflow `release.yml`, disparado por tag.
+
+**Versão final `X.Y.Z`:**
+
+1. `main` com o CI verde.
+2. No `CHANGELOG.md`, renomear `## [Não Lançado]` para `## [X.Y.Z] - AAAA-MM-DD` e criar um novo `## [Não Lançado]` vazio acima dela.
+3. Commitar: `chore: release X.Y.Z`.
+4. Criar e enviar a tag anotada: `git tag -a vX.Y.Z -m "vX.Y.Z"` e `git push origin vX.Y.Z`.
+5. Acompanhar o workflow *Release*: ele valida a tag e a seção do CHANGELOG, publica os artefatos no GitHub Packages e cria a GitHub Release com os três JARs.
+6. Commitar: `chore: start X.Y.(Z+1)-SNAPSHOT`, alterando a propriedade `revision` no `pom.xml` raiz.
+
+**Pré-lançamento `vX.Y.Z-rc.N`:** segue os mesmos passos de tag, mas não exige seção no CHANGELOG. A GitHub Release é marcada como pré-lançamento.
+
 ## 💬 Dúvidas?
 
 - Abra uma [Issue](https://github.com/tiagoadmstz/hl7-handler/issues) com label `question`
