@@ -12,7 +12,7 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - `Hl7Result`, resultado de uma leitura parseada uma única vez, com `message()`, `toRawJson()`, `toMap()` (calculado uma vez, em cache e não modificável), `toJson()` e `bindTo(Class)`
 - Hierarquia de exceções não verificadas com base `Hl7Exception`: `Hl7ParseException` (entrada ausente ou em branco e falha de leitura MLLP) e `Hl7BindingException` (serialização e desserialização JSON); `Hl7MappingException` e `MllpFramingException` passam a estender `Hl7Exception`
 - `Hl7Handler.builder()` passa a aceitar `keepEmptyStrings(boolean)` para devolver strings vazias em vez de `null` nos campos ausentes e `converter(nome, conversor)` para registrar conversores customizados usados em `tipo` no YAML, validados já no `build()`
-- Validação do mapeamento YAML no carregamento (`Hl7MappingValidator`): coordenadas, especificações de lista, tipos e faixas de `versoes`/`porVersao` inválidos, além de chaves YAML duplicadas (leitura com `STRICT_DUPLICATE_DETECTION`), lançam `Hl7MappingException` com o caminho do nó no YAML
+- **Quebra:** Validação do mapeamento YAML no carregamento (`Hl7MappingValidator`): coordenadas, especificações de lista, tipos e faixas de `versoes`/`porVersao` inválidos, além de chaves YAML duplicadas (leitura com `STRICT_DUPLICATE_DETECTION`), lançam `Hl7MappingException` com o caminho do nó no YAML; mapeamentos que antes carregavam com esses erros passam a falhar em `withMapping(...)`
 - Mapeamento YAML semântico avançado por versão com suporte a faixas (`Hl7VersionRange`), sobreposição hierárquica por especificidade (`porVersao`), validação de versões suportadas (`versoes`) e exceção especializada `Hl7MappingException`
 - Conversão tipada em mapeamentos YAML (`Hl7TypeConverter`) com suporte nativo a `texto`, `numero` (Long / Double), `data` (`Temporal` via `Hl7DateTime`), `booleano` (S/N, 1/0, SIM/NAO, TRUE/FALSE) e registro dinâmico de conversores customizados
 - Mapeamento de coleções e repetições para listas estruturadas a partir de segmentos múltiplos (`lista: "OBX[*]"`) e repetições de campos (`lista: "PID.13[*]"`), guiado por template de `item`
@@ -20,7 +20,8 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - Suíte completa de testes de mapeamento `Hl7MappingTest` com 14 novos cenários e paridade 100% nos três módulos (`hl7-handler-core`, `hl7-handler-java11`, `hl7-handler-java8`)
 - Arquitetura Strategy Pattern por versão HL7 (`io.github.tdteixeira.hl7handler.version` e subpacotes `v21` a `v28`), desacoplando regras de MSH-9, MSH-18, truncamento MSH-2, timestamp de cabeçalho (TS/DTM) e coordenadas padrão de evento (`EVN.1`/`MSH.9.2`) e paciente (`PID.2.1`/`PID.3.1`) nos três módulos
 - `Hl7VersionStrategyRegistry` thread-safe para resolução exata, floor e baseline (v2.5) de estratégias de versão
-- `Hl7Version` transformada em tipo imutável aberto e comparável (`Comparable<Hl7Version>`), preservando versões como `2.9` e `2.8.2` sem forçá-las a `UNKNOWN`
+- **Quebra:** `Hl7Version` deixa de ser `enum` e passa a ser tipo imutável aberto e comparável (`Comparable<Hl7Version>`), preservando versões como `2.9` e `2.8.2` sem forçá-las a `UNKNOWN`; `switch`, `valueOf` e `ordinal()`/`name()` sobre `Hl7Version` deixam de funcionar
+- **Quebra:** `Hl7Reader` ganha o método `withMapping(Map<String, Object>)`; implementações próprias de `Hl7Reader` precisam implementá-lo
 - `Hl7VersionProfile` carregado a partir de perfis em `resources/hl7/profiles/*.properties` (2.1 a 2.8) com fallback automático para o perfil mais próximo abaixo
 - Utilitário `Hl7DateTime` para interpretação robusta de timestamps HL7 `TS`/`DTM` com precisões variáveis e fusos horários (`OffsetDateTime`, `LocalDateTime`, `LocalDate`)
 - Coleta de advertências de conformidade em `Hl7Message.warnings()` (para versões desconhecidas e fallbacks de perfil)
@@ -48,10 +49,10 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - Módulo `hl7-handler-benchmarks` com benchmarks JMH do parser e do mapeamento (`Hl7Processor.read(...).toMap()`), incluído só pelo perfil `benchmarks` e não publicado
 
 ### Mudado
-- `Hl7Handler.builder().build()` passa a devolver `Hl7Processor` (mudança incompatível); para o `Hl7Reader` anterior usar `Hl7Handler.builder()...reader()`
-- `MllpFramingException` deixa de ser `IOException` e passa a estender `Hl7Exception` (não verificada); `MllpStreamReader` continua declarando `IOException` para erros de I/O
-- `Hl7JsonBinder` lança `Hl7BindingException` em vez de `RuntimeException`, inclusive em `bindTo` (valor que não converte para o tipo do campo, como texto em campo `int`, passa a ser `Hl7BindingException` e não `IllegalArgumentException` do Jackson)
-- Leitura de mapeamento YAML lança `Hl7MappingException` e leitura MLLP lança `Hl7ParseException` em vez de `UncheckedIOException`; entrada ausente ou em branco lança `Hl7ParseException` em vez de `IllegalStateException`, e `toMap()` sem mapeamento lança `Hl7MappingException` em vez de `IllegalStateException`
+- **Quebra:** `Hl7Handler.builder().build()` passa a devolver `Hl7Processor`; para o `Hl7Reader` anterior usar `Hl7Handler.builder()...reader()`
+- **Quebra:** `MllpFramingException` deixa de ser `IOException` e passa a estender `Hl7Exception` (não verificada); `MllpStreamReader` continua declarando `IOException` para erros de I/O
+- **Quebra:** `Hl7JsonBinder` lança `Hl7BindingException` em vez de `RuntimeException`, inclusive em `bindTo` (valor que não converte para o tipo do campo, como texto em campo `int`, passa a ser `Hl7BindingException` e não `IllegalArgumentException` do Jackson)
+- **Quebra:** Leitura de mapeamento YAML lança `Hl7MappingException` e leitura MLLP lança `Hl7ParseException` em vez de `UncheckedIOException`; entrada ausente ou em branco lança `Hl7ParseException` em vez de `IllegalStateException`, e `toMap()` sem mapeamento lança `Hl7MappingException` em vez de `IllegalStateException`
 - Refatoração inicial da arquitetura para separar concerns
 - `hl7-handler-core` passa a exigir Java 17 (antes 25) e usa Jackson 3
 - Build com JDK 25 via Maven Toolchains; testes rodam em JDK 8, 11, 17 e 25
@@ -61,14 +62,14 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - Exemplos Spring Boot e Quarkus usam um `Hl7Processor` singleton por arquivo de mapeamento, criado uma vez e reutilizado em cada mensagem
 
 ### Consertado
-- Mapa com chaves de negócio, como `exame: {valor: OBX.5, unidade: OBX.6}`, passa a ser lido como grupo e não mais como constante ou coordenada: uma mapa só é diretiva quando todas as suas chaves pertencem ao conjunto dela (`lista`/`list`/`item`, `valor`/`value`/`tipo`/`type`, `hl7`/`path`/`campo`/`fallback`/`padrao`/`tipo`/`type`)
+- **Quebra:** Mapa com chaves de negócio, como `exame: {valor: OBX.5, unidade: OBX.6}`, passa a ser lido como grupo e não mais como constante ou coordenada: um mapa só é diretiva quando todas as suas chaves pertencem ao conjunto dela (`lista`/`list`/`item`, `valor`/`value`/`tipo`/`type`, `hl7`/`path`/`campo`/`fallback`/`padrao`/`tipo`/`type`)
 - `fromMshHeader` não invade campos subsequentes com MSH-2 curto
 - Eliminação de delimitadores fixos (`&` e `^`) no parser e modelo
-- `MllpStreamReader.readMessage` não perde mais o byte seguinte ao trailer entre chamadas consecutivas; em stream sem mark e sem pushback, trailer ausente vira `MllpFramingException`
+- **Quebra:** `MllpStreamReader.readMessage` não perde mais o byte seguinte ao trailer entre chamadas consecutivas; em stream sem mark e sem pushback, trailer ausente vira `MllpFramingException`
 - `MllpStreamReader` ignora LF (0x0A) e CR fora de uma mensagem, em vez de lançar exceção com `requireFraming` ativo
 - `Hl7AckGenerator` escapa o texto da MSA-3 e copia MSH-3 a MSH-6 e MSA-2 em forma crua, preservando componentes, inclusive no MSH-10 do ACK
-- `MllpStreamReader.wrap` respeita o charset do MSH-18 em vez de usar sempre o charset padrão
-- `\Xhh\` passa a ser decodificado com o charset da mensagem (MSH-18), com UTF-8 como padrão
+- **Quebra:** `MllpStreamReader.wrap` respeita o charset do MSH-18 em vez de usar sempre o charset padrão: quadros com MSH-18 diferente do padrão mudam de bytes
+- **Quebra:** `\Xhh\` passa a ser decodificado com o charset da mensagem (MSH-18), com UTF-8 como padrão
 
 ### Removido
 - Dependências não usadas `commons-lang3` e `commons-collections4`
