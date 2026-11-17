@@ -1,75 +1,42 @@
 # Política de Segurança
 
-## Reportando Vulnerabilidades
+## Versões suportadas
 
-**NÃO abra uma issue pública** para reportar vulnerabilidades de segurança. 
+Apenas a última versão `0.x` (minor mais recente) recebe correções de segurança.
 
-Em vez disso, por favor reporte vulnerabilidades por email para:
+| Versão | Suporte |
+|---|---|
+| Última `0.x` publicada | Sim |
+| Demais versões | Não |
 
-📧 **security@hl7-handler.dev** (substitua pelo email real do projeto)
+## Reportando uma vulnerabilidade
 
-Ao reportar uma vulnerabilidade, forneça:
+**Não abra uma issue pública.** Reporte pelo recurso de relatórios privados do GitHub:
 
-1. **Descrição detalhada** da vulnerabilidade
-2. **Versão(ns) afetada(s)** do projeto
-3. **Passos para reproduzir** (se possível)
-4. **Impacto potencial** na segurança
-5. **Sugestões de correção** (opcional)
+1. Acesse a aba **Security** do repositório.
+2. Clique em **Report a vulnerability**.
 
-## Esperamos uma Resposta em:
+Ou abra diretamente: https://github.com/tiagoadmstz/hl7-handler/security/advisories/new
 
-- **24 horas**: Confirmação do recebimento
-- **72 horas**: Resposta inicial com plano de ação
-- **30 dias**: Plano de divulgação coordenado
+Informe, se possível:
 
-## Processo de Divulgação
+- descrição da vulnerabilidade e o impacto esperado;
+- versão afetada;
+- passos para reproduzir (uma mensagem HL7 de exemplo, com dados fictícios, ajuda muito).
 
-1. Você reporta a vulnerabilidade
-2. Nós confirmamos o recebimento e iniciamos investigação
-3. Desenvolvemos uma correção em uma branch privada
-4. Publicamos um patch release e divulgamos responsavelmente
-5. Um CVE é gerado (se aplicável)
+## Prazos
 
-## Prioridades
+- **Confirmação do recebimento:** em até 7 dias.
+- **Plano de correção ou resposta:** em até 30 dias.
 
-Vulnerabilidades são priorizadas por:
+Os prazos são de resposta, não de correção: a correção depende da gravidade e da complexidade do caso.
 
-1. **CRÍTICA**: Execução remota de código, autenticação contornável
-2. **ALTA**: Injeção SQL, XSS, CSRF
-3. **MÉDIA**: Divulgação de informações, DoS
-4. **BAIXA**: Outras vulnerabilidades
+## Escopo
 
-## Conformidade e Boas Práticas
+Estão no escopo:
 
-Este projeto segue:
+- **Entrada HL7 não confiável:** mensagens malformadas que causem exceção não tratada, travamento, consumo excessivo de memória ou CPU, ou leitura de dados de uma mensagem em outra.
+- **Frames MLLP acima do limite:** `MllpStreamReader` rejeita mensagens maiores que 1 MB por padrão (`DEFAULT_MAX_MESSAGE_SIZE`), com `MllpFramingException`. Contornar esse limite é considerado vulnerabilidade.
+- **Carregamento de mapeamento YAML:** arquivos de mapeamento de terceiros que causem execução de código, leitura de arquivos fora do esperado ou consumo excessivo de recursos durante o carregamento.
 
-- 🛡️ [OWASP Top 10](https://owasp.org/www-project-top-ten/)
-- 🔍 [CWE Top 25](https://cwe.mitre.org/top25/)
-- 📋 Verificação de dependências com ferramentas como OWASP Dependency-Check
-
-## Dependências
-
-Mantemos nossas dependências atualizadas e auditadas regularmente:
-
-```bash
-# Verificar vulnerabilidades conhecidas
-mvn dependency-check:check
-```
-
-## Testes de Segurança
-
-O projeto inclui:
-
-- ✅ Validação de entrada
-- ✅ Tratamento seguro de erros
-- ✅ Sem hardcoding de secrets
-- ✅ Proteção contra injeção de código
-
-## Responsáveis pela Segurança
-
-- **Mantainer Líder**: [Seu Nome/Equipe]
-- **Revisor de Segurança**: [Nome]
-
----
-
-**Agradecemos sua cooperação em manter o HL7 Handler seguro! 🙏**
+Fora do escopo: problemas da aplicação que usa a biblioteca (autenticação, autorização, armazenamento de dados) e vulnerabilidades em dependências que não sejam exploráveis através da API pública.
