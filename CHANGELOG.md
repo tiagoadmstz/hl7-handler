@@ -8,6 +8,7 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [Não Lançado]
 
 ### Adicionado
+- Preparo para publicação no GitHub Packages: JARs de `sources` e `javadoc` para `hl7-handler-core`, `hl7-handler-java11` e `hl7-handler-java8`, e versão controlada pela propriedade `revision` (POM publicado com a versão literal)
 - `Hl7Processor`, imutável e thread-safe, criado por `Hl7Handler.builder().build()`, com `read(String)`, `readBytes(byte[])`, `readMllp(InputStream)` (devolve `null` em fim de stream) e `hasMapping()`
 - `Hl7Result`, resultado de uma leitura parseada uma única vez, com `message()`, `toRawJson()`, `toMap()` (calculado uma vez, em cache e não modificável), `toJson()` e `bindTo(Class)`
 - Hierarquia de exceções não verificadas com base `Hl7Exception`: `Hl7ParseException` (entrada ausente ou em branco e falha de leitura MLLP) e `Hl7BindingException` (serialização e desserialização JSON); `Hl7MappingException` e `MllpFramingException` passam a estender `Hl7Exception`

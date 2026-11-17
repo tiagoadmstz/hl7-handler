@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.github.tiagoadmstz.hl7handler</groupId>
         <artifactId>hl7-handler-examples</artifactId>
-        <version>0.1.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>example-pure-java8</artifactId>
