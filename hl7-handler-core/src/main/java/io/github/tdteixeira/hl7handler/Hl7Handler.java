@@ -1,8 +1,11 @@
 package io.github.tdteixeira.hl7handler;
 
 import io.github.tdteixeira.hl7handler.api.DefaultHl7Reader;
+import io.github.tdteixeira.hl7handler.api.Hl7Processor;
 import io.github.tdteixeira.hl7handler.api.Hl7Reader;
 import io.github.tdteixeira.hl7handler.binding.Hl7JsonBinder;
+import io.github.tdteixeira.hl7handler.mapping.Hl7MappingException;
+import io.github.tdteixeira.hl7handler.mapping.Hl7MappingValidator;
 import io.github.tdteixeira.hl7handler.mapping.Hl7ToMapTransformer;
 import io.github.tdteixeira.hl7handler.mapping.Hl7TypeConverter;
 import io.github.tdteixeira.hl7handler.mapping.YamlMappingLoader;
@@ -20,6 +23,7 @@ import tools.jackson.core.StreamReadFeature;
 import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -122,7 +126,7 @@ public final class Hl7Handler {
     }
 
     /**
-     * Builder for isolated Hl7Reader instances without global state side-effects.
+     * Builder for isolated Hl7Processor and Hl7Reader instances without global state side-effects.
      */
     public static final class Builder {
         private Hl7ParserRegistry registry;
@@ -210,44 +214,77 @@ public final class Hl7Handler {
             return this;
         }
 
-        public Hl7Reader build() {
-            YAMLMapper yamlMapper = YAMLMapper.builder()
-                .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
-                .build();
-            YamlMappingLoader yamlLoader = new YamlMappingLoader(yamlMapper);
-            Hl7ToMapTransformer transformer = new Hl7ToMapTransformer(keepEmptyStrings, converters);
-            Hl7JsonBinder jsonBinder = new Hl7JsonBinder();
-            MllpStreamReader mllpReader = new MllpStreamReader(charset);
-
-            Hl7ParserRegistry effectiveRegistry = this.registry != null
-                    ? this.registry
-                    : new Hl7ParserRegistry(new DefaultHl7Parser(defaultDelimiters));
-
-            DefaultHl7Reader reader = new DefaultHl7Reader(
-                effectiveRegistry,
-                yamlLoader,
+        public Hl7Processor build() {
+            Hl7ToMapTransformer transformer = newTransformer();
+            Map<String, Object> mapping = loadMapping(newYamlLoader(), transformer);
+            return new Hl7Processor(
+                effectiveRegistry(),
                 transformer,
-                jsonBinder,
-                mllpReader
+                new Hl7JsonBinder(),
+                new MllpStreamReader(charset),
+                mapping
             );
-
-            if (mappingConfig != null) {
-                reader.withMapping(mappingConfig);
-            } else if (mappingFile != null) {
-                reader.withMapping(mappingFile);
-            } else if (mappingPath != null) {
-                reader.withMapping(mappingPath);
-            } else if (mappingStream != null) {
-                reader.withMapping(mappingStream);
-            } else if (mappingContent != null) {
-                reader.withMappingContent(mappingContent);
-            }
-
-            return reader;
         }
 
         public Hl7Reader reader() {
-            return build();
+            YamlMappingLoader yamlLoader = newYamlLoader();
+            Hl7ToMapTransformer transformer = newTransformer();
+            return new DefaultHl7Reader(
+                effectiveRegistry(),
+                yamlLoader,
+                transformer,
+                new Hl7JsonBinder(),
+                new MllpStreamReader(charset),
+                loadMapping(yamlLoader, transformer)
+            );
+        }
+
+        private YamlMappingLoader newYamlLoader() {
+            YAMLMapper yamlMapper = YAMLMapper.builder()
+                .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
+                .build();
+            return new YamlMappingLoader(yamlMapper);
+        }
+
+        private Hl7ToMapTransformer newTransformer() {
+            return new Hl7ToMapTransformer(keepEmptyStrings, converters);
+        }
+
+        private Hl7ParserRegistry effectiveRegistry() {
+            return this.registry != null
+                    ? this.registry
+                    : new Hl7ParserRegistry(new DefaultHl7Parser(defaultDelimiters));
+        }
+
+        private Map<String, Object> loadMapping(YamlMappingLoader yamlLoader, Hl7ToMapTransformer transformer) {
+            Map<String, Object> mapping = readMappingSource(yamlLoader);
+            if (mapping != null) {
+                Hl7MappingValidator.validate(mapping, transformer.getConverterNames());
+            }
+            return mapping;
+        }
+
+        private Map<String, Object> readMappingSource(YamlMappingLoader yamlLoader) {
+            if (mappingConfig != null) {
+                return mappingConfig;
+            }
+            try {
+                if (mappingFile != null) {
+                    return yamlLoader.load(mappingFile);
+                }
+                if (mappingPath != null) {
+                    return yamlLoader.load(mappingPath);
+                }
+                if (mappingStream != null) {
+                    return yamlLoader.load(mappingStream);
+                }
+                if (mappingContent != null) {
+                    return yamlLoader.load(mappingContent);
+                }
+            } catch (IOException e) {
+                throw new Hl7MappingException("Error reading YAML mapping", e);
+            }
+            return null;
         }
     }
 }

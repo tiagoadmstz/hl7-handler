@@ -5,6 +5,7 @@ import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.SerializationFeature;
 
+import io.github.tdteixeira.hl7handler.Hl7BindingException;
 import io.github.tdteixeira.hl7handler.model.Hl7Field;
 import io.github.tdteixeira.hl7handler.model.Hl7Message;
 import io.github.tdteixeira.hl7handler.model.Hl7Segment;
@@ -43,7 +44,7 @@ public class Hl7JsonBinder {
         try {
             return jsonMapper.writeValueAsString(data);
         } catch (JacksonException e) {
-            throw new RuntimeException("Error serializing map to JSON", e);
+            throw new Hl7BindingException("Error serializing map to JSON", e);
         }
     }
 
@@ -89,7 +90,7 @@ public class Hl7JsonBinder {
         try {
             return jsonMapper.readValue(json, targetClass);
         } catch (JacksonException e) {
-            throw new RuntimeException("Error deserializing JSON to " + targetClass.getName(), e);
+            throw new Hl7BindingException("Error deserializing JSON to " + targetClass.getName(), e);
         }
     }
 }

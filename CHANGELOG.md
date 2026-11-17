@@ -8,6 +8,9 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [Não Lançado]
 
 ### Adicionado
+- `Hl7Processor`, imutável e thread-safe, criado por `Hl7Handler.builder().build()`, com `read(String)`, `readBytes(byte[])`, `readMllp(InputStream)` (devolve `null` em fim de stream) e `hasMapping()`
+- `Hl7Result`, resultado de uma leitura parseada uma única vez, com `message()`, `toRawJson()`, `toMap()` (calculado uma vez, em cache e não modificável), `toJson()` e `bindTo(Class)`
+- Hierarquia de exceções não verificadas com base `Hl7Exception`: `Hl7ParseException` (entrada ausente ou em branco e falha de leitura MLLP) e `Hl7BindingException` (serialização e desserialização JSON); `Hl7MappingException` e `MllpFramingException` passam a estender `Hl7Exception`
 - `Hl7Handler.builder()` passa a aceitar `keepEmptyStrings(boolean)` para devolver strings vazias em vez de `null` nos campos ausentes e `converter(nome, conversor)` para registrar conversores customizados usados em `tipo` no YAML, validados já no `build()`
 - Validação do mapeamento YAML no carregamento (`Hl7MappingValidator`): coordenadas, especificações de lista, tipos e faixas de `versoes`/`porVersao` inválidos, além de chaves YAML duplicadas (leitura com `STRICT_DUPLICATE_DETECTION`), lançam `Hl7MappingException` com o caminho do nó no YAML
 - Mapeamento YAML semântico avançado por versão com suporte a faixas (`Hl7VersionRange`), sobreposição hierárquica por especificidade (`porVersao`), validação de versões suportadas (`versoes`) e exceção especializada `Hl7MappingException`
@@ -44,6 +47,10 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - Amostras e testes de compatibilidade por versão HL7 (2.1 a 2.9, sem MSH-12, MSH-2 curto e com 5 caracteres), em cada artefato
 
 ### Mudado
+- `Hl7Handler.builder().build()` passa a devolver `Hl7Processor` (mudança incompatível); para o `Hl7Reader` anterior usar `Hl7Handler.builder()...reader()`
+- `MllpFramingException` deixa de ser `IOException` e passa a estender `Hl7Exception` (não verificada); `MllpStreamReader` continua declarando `IOException` para erros de I/O
+- `Hl7JsonBinder` lança `Hl7BindingException` em vez de `RuntimeException`
+- Leitura de mapeamento YAML lança `Hl7MappingException` e leitura MLLP lança `Hl7ParseException` em vez de `UncheckedIOException`; entrada ausente ou em branco lança `Hl7ParseException` em vez de `IllegalStateException`, e `toMap()` sem mapeamento lança `Hl7MappingException` em vez de `IllegalStateException`
 - Refatoração inicial da arquitetura para separar concerns
 - `hl7-handler-core` passa a exigir Java 17 (antes 25) e usa Jackson 3
 - Build com JDK 25 via Maven Toolchains; testes rodam em JDK 8, 11, 17 e 25

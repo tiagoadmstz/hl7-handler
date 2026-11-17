@@ -243,11 +243,13 @@ Todo `withMapping(...)` valida o YAML e lança `Hl7MappingException` com o camin
 #### Opções do Builder
 
 ```java
-Hl7Reader reader = Hl7Handler.builder()
+Hl7Processor processor = Hl7Handler.builder()
     .keepEmptyStrings(true)
     .converter("maiusculo", valor -> valor == null ? null : valor.toUpperCase())
     .withMapping(new File("caminho/para/meu-mapeamento.yaml"))
     .build();
+
+PacienteVO vo = processor.read(rawHl7).bindTo(PacienteVO.class);
 ```
 
 ---

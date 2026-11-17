@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
+import io.github.tdteixeira.hl7handler.Hl7BindingException;
 import io.github.tdteixeira.hl7handler.model.Hl7Field;
 import io.github.tdteixeira.hl7handler.model.Hl7Message;
 import io.github.tdteixeira.hl7handler.model.Hl7Segment;
@@ -57,7 +58,7 @@ public class Hl7JsonBinder {
         try {
             return jsonMapper.writeValueAsString(data);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Error serializing map to JSON", e);
+            throw new Hl7BindingException("Error serializing map to JSON", e);
         }
     }
 
@@ -103,7 +104,7 @@ public class Hl7JsonBinder {
         try {
             return jsonMapper.readValue(json, targetClass);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Error deserializing JSON to " + targetClass.getName(), e);
+            throw new Hl7BindingException("Error deserializing JSON to " + targetClass.getName(), e);
         }
     }
 }

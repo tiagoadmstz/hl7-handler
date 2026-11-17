@@ -227,7 +227,7 @@ class Hl7VersionProfileAndDateTimeTest {
                 .parser(mockParser)
                 .charset(StandardCharsets.ISO_8859_1)
                 .defaultDelimiters(Hl7Delimiters.DEFAULT)
-                .build();
+                .reader();
 
         assertThat(globalRegistry.getParserFor(Hl7Version.V2_5)).isNotSameAs(mockParser);
 

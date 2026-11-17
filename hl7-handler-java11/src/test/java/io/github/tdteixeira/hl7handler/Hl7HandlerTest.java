@@ -157,7 +157,7 @@ class Hl7HandlerTest {
                 .keepEmptyStrings(true)
                 .withMapping(mapping)
                 .build()
-                .from(sampleHl7)
+                .read(sampleHl7)
                 .toMap();
 
         assertThat(result.get("campoAusente")).isEqualTo("");
@@ -172,7 +172,7 @@ class Hl7HandlerTest {
         Map<String, Object> result = Hl7Handler.builder()
                 .withMapping(mapping)
                 .build()
-                .from(sampleHl7)
+                .read(sampleHl7)
                 .toMap();
 
         assertThat(result).containsKey("campoAusente");
@@ -192,7 +192,7 @@ class Hl7HandlerTest {
                 .converter("maiusculo", raw -> raw.toUpperCase(Locale.ROOT))
                 .withMappingContent(yaml)
                 .build()
-                .from(hl7)
+                .read(hl7)
                 .toMap();
 
         assertThat(result.get("nome")).isEqualTo("JOAO");
