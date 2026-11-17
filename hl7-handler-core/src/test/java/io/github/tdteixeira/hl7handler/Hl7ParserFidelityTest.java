@@ -8,6 +8,7 @@ import io.github.tdteixeira.hl7handler.writer.Hl7Writer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -69,6 +70,64 @@ class Hl7ParserFidelityTest {
         String raw = "ABC\\X4445\\\\F\\\\X20\\GHI";
         String decoded = Hl7Escapes.decode(raw, Hl7Delimiters.DEFAULT);
         assertThat(decoded).isEqualTo("ABCDE| GHI");
+    }
+
+    @Test
+    @DisplayName("Decodifica escape hexadecimal UTF-8 quando o charset é UTF-8")
+    void shouldDecodeHexEscapeWithExplicitUtf8Charset() {
+        String decoded = Hl7Escapes.decode("\\XC3A7\\", Hl7Delimiters.DEFAULT, StandardCharsets.UTF_8);
+        assertThat(decoded).isEqualTo("ç");
+    }
+
+    @Test
+    @DisplayName("Decodifica escape hexadecimal ISO-8859-1 quando o charset é ISO-8859-1")
+    void shouldDecodeHexEscapeWithExplicitIso88591Charset() {
+        String decoded = Hl7Escapes.decode("\\XE7\\", Hl7Delimiters.DEFAULT, StandardCharsets.ISO_8859_1);
+        assertThat(decoded).isEqualTo("ç");
+    }
+
+    @Test
+    @DisplayName("Decodifica escape hexadecimal UTF-8 com MSH-18 UNICODE UTF-8")
+    void shouldDecodeHexEscapeWithMsh18UnicodeUtf8() {
+        String hl7 = "MSH|^~\\&|SIS|HOSP|||20261110||ADT^A01|MSG01|P|2.5||||||UNICODE UTF-8\r"
+                + "PID|1||12345||TESTE^\\XC3A7\\\r";
+
+        Hl7Message message = Hl7Handler.reader().from(hl7).toMessage();
+
+        assertThat(message.get("PID-5.2")).isEqualTo("ç");
+    }
+
+    @Test
+    @DisplayName("Decodifica escape hexadecimal ISO-8859-1 com MSH-18 8859/1")
+    void shouldDecodeHexEscapeWithMsh18Iso88591() {
+        String hl7 = "MSH|^~\\&|SIS|HOSP|||20261110||ADT^A01|MSG01|P|2.5||||||8859/1\r"
+                + "PID|1||12345||TESTE^\\XE7\\\r";
+
+        Hl7Message message = Hl7Handler.reader().from(hl7).toMessage();
+
+        assertThat(message.get("PID-5.2")).isEqualTo("ç");
+    }
+
+    @Test
+    @DisplayName("Decodifica escape hexadecimal como UTF-8 quando a mensagem não tem MSH-18")
+    void shouldDecodeHexEscapeAsUtf8WhenMsh18Absent() {
+        String hl7 = "MSH|^~\\&|SIS|HOSP|||20261110||ADT^A01|MSG01|P|2.5\r"
+                + "PID|1||12345||TESTE^\\XC3A7\\\r";
+
+        Hl7Message message = Hl7Handler.reader().from(hl7).toMessage();
+
+        assertThat(message.get("PID-5.2")).isEqualTo("ç");
+    }
+
+    @Test
+    @DisplayName("Mantém como texto literal o escape hexadecimal com número ímpar de dígitos")
+    void shouldKeepOddLengthHexEscapeAsLiteral() {
+        String hl7 = "MSH|^~\\&|SIS|HOSP|||20261110||ADT^A01|MSG01|P|2.5\r"
+                + "PID|1||12345||TESTE^\\XABC\\\r";
+
+        Hl7Message message = Hl7Handler.reader().from(hl7).toMessage();
+
+        assertThat(message.get("PID-5.2")).isEqualTo("\\XABC\\");
     }
 
     @Test

@@ -1,5 +1,6 @@
 package io.github.tdteixeira.hl7handler.parser;
 
+import io.github.tdteixeira.hl7handler.model.Hl7CharsetNames;
 import io.github.tdteixeira.hl7handler.model.Hl7Component;
 import io.github.tdteixeira.hl7handler.model.Hl7Delimiters;
 import io.github.tdteixeira.hl7handler.model.Hl7Escapes;
@@ -11,6 +12,8 @@ import io.github.tdteixeira.hl7handler.model.Hl7VersionProfile;
 import io.github.tdteixeira.hl7handler.version.Hl7VersionStrategy;
 import io.github.tdteixeira.hl7handler.version.Hl7VersionStrategyRegistry;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -64,13 +67,14 @@ public class DefaultHl7Parser implements Hl7Parser {
         }
 
         String[] rawLines = rawHl7.split("\r\n|\r|\n");
+        Charset charset = Hl7CharsetNames.resolve(msh18Value(rawLines, delimiters), StandardCharsets.UTF_8);
         List<Hl7Segment> segments = new ArrayList<>();
 
         for (String line : rawLines) {
             if (line.isEmpty() || line.trim().isEmpty()) {
                 continue;
             }
-            segments.add(parseSegment(line, delimiters));
+            segments.add(parseSegment(line, delimiters, charset));
         }
 
         return new Hl7Message(version, delimiters, segments, warnings);
@@ -84,7 +88,22 @@ public class DefaultHl7Parser implements Hl7Parser {
         return defaultDelimiters;
     }
 
-    private Hl7Segment parseSegment(String line, Hl7Delimiters delims) {
+    private static String msh18Value(String[] rawLines, Hl7Delimiters delims) {
+        String fieldSepRegex = Pattern.quote(String.valueOf(delims.fieldSeparator()));
+        String compSepRegex = Pattern.quote(String.valueOf(delims.componentSeparator()));
+        for (String line : rawLines) {
+            String[] tokens = line.split(fieldSepRegex, -1);
+            if ("MSH".equalsIgnoreCase(tokens[0].trim())) {
+                if (tokens.length <= 17) {
+                    return "";
+                }
+                return tokens[17].split(compSepRegex, -1)[0];
+            }
+        }
+        return "";
+    }
+
+    private Hl7Segment parseSegment(String line, Hl7Delimiters delims, Charset charset) {
         String fieldSepRegex = Pattern.quote(String.valueOf(delims.fieldSeparator()));
 
         String[] tokens = line.split(fieldSepRegex, -1);
@@ -100,19 +119,19 @@ public class DefaultHl7Parser implements Hl7Parser {
                 if (i == 1) {
                     segment.addField(createSimpleField(tokens[i], delims.componentSeparator()));
                 } else {
-                    segment.addField(parseField(tokens[i], delims));
+                    segment.addField(parseField(tokens[i], delims, charset));
                 }
             }
         } else {
             for (int i = 1; i < tokens.length; i++) {
-                segment.addField(parseField(tokens[i], delims));
+                segment.addField(parseField(tokens[i], delims, charset));
             }
         }
 
         return segment;
     }
 
-    private Hl7Field parseField(String rawField, Hl7Delimiters delims) {
+    private Hl7Field parseField(String rawField, Hl7Delimiters delims, Charset charset) {
         if (rawField == null || rawField.isEmpty()) {
             return new Hl7Field(delims.componentSeparator(), Collections.emptyList());
         }
@@ -137,7 +156,7 @@ public class DefaultHl7Parser implements Hl7Parser {
 
                     for (int s = 0; s < rawSubs.length; s++) {
                         String rawSub = rawSubs[s];
-                        String decodedSub = Hl7Escapes.decode(rawSub, delims);
+                        String decodedSub = Hl7Escapes.decode(rawSub, delims, charset);
                         rawSubList.add(rawSub);
                         decodedSubList.add(decodedSub);
                         if (s > 0) {
@@ -147,7 +166,7 @@ public class DefaultHl7Parser implements Hl7Parser {
                     }
                     components.add(new Hl7Component(decodedCompBuilder.toString(), rawComp, decodedSubList, rawSubList));
                 } else {
-                    String decodedComp = Hl7Escapes.decode(rawComp, delims);
+                    String decodedComp = Hl7Escapes.decode(rawComp, delims, charset);
                     components.add(new Hl7Component(decodedComp, rawComp, Collections.emptyList(), Collections.emptyList()));
                 }
             }

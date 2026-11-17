@@ -1,6 +1,7 @@
 package io.github.tdteixeira.hl7handler.api;
 
 import io.github.tdteixeira.hl7handler.binding.Hl7JsonBinder;
+import io.github.tdteixeira.hl7handler.mapping.Hl7MappingValidator;
 import io.github.tdteixeira.hl7handler.mapping.Hl7ToMapTransformer;
 import io.github.tdteixeira.hl7handler.mapping.YamlMappingLoader;
 import io.github.tdteixeira.hl7handler.model.Hl7Message;
@@ -86,7 +87,7 @@ public class DefaultHl7Reader implements Hl7Reader {
     @Override
     public Hl7Reader withMapping(File yamlFile) {
         try {
-            this.mappingConfig = yamlLoader.load(yamlFile);
+            this.mappingConfig = validated(yamlLoader.load(yamlFile));
             return this;
         } catch (IOException e) {
             throw new UncheckedIOException("Error reading YAML mapping file: " + yamlFile, e);
@@ -96,7 +97,7 @@ public class DefaultHl7Reader implements Hl7Reader {
     @Override
     public Hl7Reader withMapping(Path yamlPath) {
         try {
-            this.mappingConfig = yamlLoader.load(yamlPath);
+            this.mappingConfig = validated(yamlLoader.load(yamlPath));
             return this;
         } catch (IOException e) {
             throw new UncheckedIOException("Error reading YAML mapping path: " + yamlPath, e);
@@ -106,7 +107,7 @@ public class DefaultHl7Reader implements Hl7Reader {
     @Override
     public Hl7Reader withMapping(InputStream yamlInputStream) {
         try {
-            this.mappingConfig = yamlLoader.load(yamlInputStream);
+            this.mappingConfig = validated(yamlLoader.load(yamlInputStream));
             return this;
         } catch (IOException e) {
             throw new UncheckedIOException("Error reading YAML mapping stream", e);
@@ -116,7 +117,7 @@ public class DefaultHl7Reader implements Hl7Reader {
     @Override
     public Hl7Reader withMappingContent(String yamlContent) {
         try {
-            this.mappingConfig = yamlLoader.load(yamlContent);
+            this.mappingConfig = validated(yamlLoader.load(yamlContent));
             return this;
         } catch (IOException e) {
             throw new UncheckedIOException("Error parsing YAML content", e);
@@ -125,8 +126,13 @@ public class DefaultHl7Reader implements Hl7Reader {
 
     @Override
     public Hl7Reader withMapping(Map<String, Object> mappingConfig) {
-        this.mappingConfig = mappingConfig;
+        this.mappingConfig = validated(mappingConfig);
         return this;
+    }
+
+    private Map<String, Object> validated(Map<String, Object> mapping) {
+        Hl7MappingValidator.validate(mapping, transformer.getConverterNames());
+        return mapping;
     }
 
     @Override

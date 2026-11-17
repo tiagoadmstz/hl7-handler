@@ -1,5 +1,6 @@
 package io.github.tdteixeira.hl7handler;
 
+import io.github.tdteixeira.hl7handler.mapping.Hl7MappingException;
 import io.github.tdteixeira.hl7handler.model.Hl7Message;
 import io.github.tdteixeira.hl7handler.model.Hl7Version;
 import io.github.tdteixeira.hl7handler.network.MllpStreamReader;
@@ -10,8 +11,12 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class Hl7HandlerTest {
 
@@ -140,5 +145,68 @@ class Hl7HandlerTest {
         String serialized = Hl7Handler.toHl7(message);
         assertThat(serialized).startsWith("MSH|^~\\&|");
         assertThat(serialized).contains("PID|1||123456^^^HOSPITAL^MR||SILVA^JOAO^CARLOS^^DR");
+    }
+
+    @Test
+    @DisplayName("Should return empty string for an empty field when keepEmptyStrings is enabled in the builder")
+    void shouldKeepEmptyStringWhenBuilderEnablesKeepEmptyStrings() {
+        Map<String, Object> mapping = new LinkedHashMap<>();
+        mapping.put("campoAusente", "PID.99");
+
+        Map<String, Object> result = Hl7Handler.builder()
+                .keepEmptyStrings(true)
+                .withMapping(mapping)
+                .build()
+                .from(sampleHl7)
+                .toMap();
+
+        assertThat(result.get("campoAusente")).isEqualTo("");
+    }
+
+    @Test
+    @DisplayName("Should return null for an empty field by default in the builder")
+    void shouldReturnNullForEmptyFieldByDefaultInBuilder() {
+        Map<String, Object> mapping = new LinkedHashMap<>();
+        mapping.put("campoAusente", "PID.99");
+
+        Map<String, Object> result = Hl7Handler.builder()
+                .withMapping(mapping)
+                .build()
+                .from(sampleHl7)
+                .toMap();
+
+        assertThat(result).containsKey("campoAusente");
+        assertThat(result.get("campoAusente")).isNull();
+    }
+
+    @Test
+    @DisplayName("Should apply a converter registered in the builder when the YAML uses it as tipo")
+    void shouldApplyConverterRegisteredInBuilder() {
+        String hl7 = "MSH|^~\\&|LAB|HOSP|REC|FAC|20261110120000||ADT^A01|MSG001|P|2.5\r"
+                + "PID|1||12345||SILVA^joao\r";
+        String yaml = "nome:\n"
+                + "  hl7: PID.5.2\n"
+                + "  tipo: maiusculo\n";
+
+        Map<String, Object> result = Hl7Handler.builder()
+                .converter("maiusculo", raw -> raw.toUpperCase(Locale.ROOT))
+                .withMappingContent(yaml)
+                .build()
+                .from(hl7)
+                .toMap();
+
+        assertThat(result.get("nome")).isEqualTo("JOAO");
+    }
+
+    @Test
+    @DisplayName("Should reject a YAML tipo whose converter was not registered in the builder")
+    void shouldRejectUnregisteredConverterOnBuild() {
+        String yaml = "nome:\n"
+                + "  hl7: PID.5.2\n"
+                + "  tipo: maiusculo\n";
+
+        assertThatThrownBy(() -> Hl7Handler.builder().withMappingContent(yaml).build())
+                .isInstanceOf(Hl7MappingException.class)
+                .hasMessageContaining("maiusculo");
     }
 }

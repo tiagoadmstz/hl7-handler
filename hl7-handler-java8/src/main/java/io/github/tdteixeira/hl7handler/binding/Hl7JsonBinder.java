@@ -1,14 +1,20 @@
 package io.github.tdteixeira.hl7handler.binding;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import io.github.tdteixeira.hl7handler.model.Hl7Field;
 import io.github.tdteixeira.hl7handler.model.Hl7Message;
 import io.github.tdteixeira.hl7handler.model.Hl7Segment;
 
+import java.io.IOException;
+import java.time.temporal.Temporal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,9 +28,17 @@ public class Hl7JsonBinder {
     private final JsonMapper jsonMapper;
 
     public Hl7JsonBinder() {
+        SimpleModule timeModule = new SimpleModule();
+        timeModule.addSerializer(Temporal.class, new JsonSerializer<Temporal>() {
+            @Override
+            public void serialize(Temporal value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+                gen.writeString(value != null ? value.toString() : null);
+            }
+        });
         this.jsonMapper = JsonMapper.builder()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .enable(SerializationFeature.INDENT_OUTPUT)
+                .addModule(timeModule)
                 .build();
     }
 

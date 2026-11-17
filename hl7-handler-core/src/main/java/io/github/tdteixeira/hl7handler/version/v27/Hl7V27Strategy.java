@@ -4,7 +4,7 @@ import io.github.tdteixeira.hl7handler.model.Hl7Version;
 import io.github.tdteixeira.hl7handler.version.v26.Hl7V26Strategy;
 
 /**
- * HL7 v2.7 strategy: 5th char truncation '#' supported, max 5 encoding chars.
+ * HL7 v2.7 strategy. Version data comes from the 2.7 profile (MSH-2 truncation supported).
  */
 public class Hl7V27Strategy extends Hl7V26Strategy {
 
@@ -14,15 +14,5 @@ public class Hl7V27Strategy extends Hl7V26Strategy {
 
     protected Hl7V27Strategy(Hl7Version version) {
         super(version);
-    }
-
-    @Override
-    public int getMaxEncodingCharacters() {
-        return 5;
-    }
-
-    @Override
-    public boolean isTruncationSupported() {
-        return true;
     }
 }

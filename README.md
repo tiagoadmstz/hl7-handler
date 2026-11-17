@@ -210,6 +210,46 @@ String json = Hl7Handler.reader()
     .toJson();
 ```
 
+#### Diretivas do mapeamento
+
+Além da coordenada em texto (`"PID.5.1"`), um nó pode ser uma diretiva:
+
+```yaml
+mappings:
+  nascimento: { hl7: "PID.7", tipo: data }
+  convenio: { hl7: "IN1.4", fallback: "PV1.20", padrao: "PARTICULAR" }
+  origem: { valor: "LAB" }
+  resultados:
+    lista: "OBX[*]"
+    item:
+      codigo: "3.1"
+      valor: "5"
+porVersao:
+  "<2.3.1":
+    paciente:
+      prontuario: "PID.2.1"
+```
+
+- Coordenada: `hl7` / `path` / `campo`, com `fallback` / `padrao` e `tipo` / `type` opcionais.
+- Constante: `valor` / `value`, com `tipo` opcional.
+- Lista: `lista` / `list` (`SEG[*]` ou `SEG.n[*]`), com `item`.
+- Um mapa só é lido como diretiva quando **todas** as suas chaves são da diretiva. Um grupo com outras chaves, como `exame: { valor: "OBX.5", unidade: "OBX.6" }`, continua sendo um grupo comum.
+- Tipos embutidos: `texto`, `numero`, `data`, `booleano` (e os nomes em inglês).
+
+#### Validação no carregamento
+
+Todo `withMapping(...)` valida o YAML e lança `Hl7MappingException` com o caminho do erro, por exemplo `Invalid HL7 coordinate 'PID.x' at 'paciente.nome'`. São verificadas chaves duplicadas, coordenadas, listas, tipos e faixas de `versoes` e `porVersao`.
+
+#### Opções do Builder
+
+```java
+Hl7Reader reader = Hl7Handler.builder()
+    .keepEmptyStrings(true)
+    .converter("maiusculo", valor -> valor == null ? null : valor.toUpperCase())
+    .withMapping(new File("caminho/para/meu-mapeamento.yaml"))
+    .build();
+```
+
 ---
 
 ### 3. Data Binding Direto para Value Object (VO)
@@ -241,3 +281,6 @@ try (InputStream in = socket.getInputStream()) {
 // Empacotando resposta ACK em MLLP para enviar de volta pela rede:
 byte[] ackMllpBytes = Hl7Handler.network().wrap("MSH|^~\\&|...|ACK^A01|...");
 ```
+
+- `wrap` codifica a mensagem com o charset do MSH-18 (UTF-8 quando ausente). MLLP sobre UTF-16 não é suportado.
+- Para ler várias mensagens chamando `readMessage` em sequência, passe um `PushbackInputStream` (ou um stream com `mark`) ou use `readAll`. Num stream comum, um quadro sem o `<CR>` final lança `MllpFramingException` em vez de perder bytes.

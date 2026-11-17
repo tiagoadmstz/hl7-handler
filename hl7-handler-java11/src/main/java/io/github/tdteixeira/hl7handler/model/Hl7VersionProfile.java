@@ -30,6 +30,8 @@ public final class Hl7VersionProfile {
     private final int msh2MinLength;
     private final int msh2MaxLength;
     private final boolean msh2TruncationSupported;
+    private final String eventCoordinate;
+    private final String patientIdCoordinate;
 
     public Hl7VersionProfile(
             Hl7Version version,
@@ -38,7 +40,9 @@ public final class Hl7VersionProfile {
             boolean msh18Supported,
             int msh2MinLength,
             int msh2MaxLength,
-            boolean msh2TruncationSupported
+            boolean msh2TruncationSupported,
+            String eventCoordinate,
+            String patientIdCoordinate
     ) {
         this.version = version != null ? version : Hl7Version.UNKNOWN;
         this.dateType = dateType != null ? dateType : "TS";
@@ -47,6 +51,8 @@ public final class Hl7VersionProfile {
         this.msh2MinLength = msh2MinLength;
         this.msh2MaxLength = msh2MaxLength;
         this.msh2TruncationSupported = msh2TruncationSupported;
+        this.eventCoordinate = eventCoordinate != null ? eventCoordinate : defaultEventCoordinate(this.version);
+        this.patientIdCoordinate = patientIdCoordinate != null ? patientIdCoordinate : defaultPatientIdCoordinate(this.version);
     }
 
     private static NavigableMap<Hl7Version, Hl7VersionProfile> loadProfiles() {
@@ -80,6 +86,8 @@ public final class Hl7VersionProfile {
             int minLen = Integer.parseInt(props.getProperty("msh2.min_length", "4"));
             int maxLen = Integer.parseInt(props.getProperty("msh2.max_length", "4"));
             boolean trunc = Boolean.parseBoolean(props.getProperty("msh2.truncation_supported", "false"));
+            String eventCoordinate = props.getProperty("event.coordinate", defaultEventCoordinate(ver));
+            String patientIdCoordinate = props.getProperty("patient_id.coordinate", defaultPatientIdCoordinate(ver));
 
             return new Hl7VersionProfile(
                 Hl7Version.fromIdentifier(v),
@@ -88,7 +96,9 @@ public final class Hl7VersionProfile {
                 msh18Supported,
                 minLen,
                 maxLen,
-                trunc
+                trunc,
+                eventCoordinate,
+                patientIdCoordinate
             );
         } catch (IOException e) {
             return createDefaultFallback(ver);
@@ -105,8 +115,24 @@ public final class Hl7VersionProfile {
             true,
             4,
             trunc ? 5 : 4,
-            trunc
+            trunc,
+            defaultEventCoordinate(ver),
+            defaultPatientIdCoordinate(ver)
         );
+    }
+
+    private static String defaultEventCoordinate(Hl7Version ver) {
+        if (ver.compareTo(Hl7Version.V2_2) >= 0) {
+            return "MSH.9.2";
+        }
+        return "EVN.1";
+    }
+
+    private static String defaultPatientIdCoordinate(Hl7Version ver) {
+        if (ver.compareTo(Hl7Version.V2_3_1) >= 0) {
+            return "PID.3.1";
+        }
+        return "PID.2.1";
     }
 
     /**
@@ -167,6 +193,14 @@ public final class Hl7VersionProfile {
         return msh2TruncationSupported;
     }
 
+    public String getEventCoordinate() {
+        return eventCoordinate;
+    }
+
+    public String getPatientIdCoordinate() {
+        return patientIdCoordinate;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -182,12 +216,15 @@ public final class Hl7VersionProfile {
                 && msh2TruncationSupported == that.msh2TruncationSupported
                 && Objects.equals(version, that.version)
                 && Objects.equals(dateType, that.dateType)
-                && Objects.equals(msh9Format, that.msh9Format);
+                && Objects.equals(msh9Format, that.msh9Format)
+                && Objects.equals(eventCoordinate, that.eventCoordinate)
+                && Objects.equals(patientIdCoordinate, that.patientIdCoordinate);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(version, dateType, msh9Format, msh18Supported, msh2MinLength, msh2MaxLength, msh2TruncationSupported);
+        return Objects.hash(version, dateType, msh9Format, msh18Supported, msh2MinLength, msh2MaxLength,
+                msh2TruncationSupported, eventCoordinate, patientIdCoordinate);
     }
 
     @Override
@@ -197,6 +234,8 @@ public final class Hl7VersionProfile {
                 + ", msh9Format=" + msh9Format
                 + ", msh18Supported=" + msh18Supported
                 + ", msh2=" + msh2MinLength + ".." + msh2MaxLength
-                + ", truncation=" + msh2TruncationSupported + "]";
+                + ", truncation=" + msh2TruncationSupported
+                + ", eventCoordinate=" + eventCoordinate
+                + ", patientIdCoordinate=" + patientIdCoordinate + "]";
     }
 }

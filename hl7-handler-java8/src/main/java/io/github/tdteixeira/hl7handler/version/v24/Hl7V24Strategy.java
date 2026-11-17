@@ -4,7 +4,7 @@ import io.github.tdteixeira.hl7handler.model.Hl7Version;
 import io.github.tdteixeira.hl7handler.version.v23.Hl7V231Strategy;
 
 /**
- * HL7 v2.4 strategy: consolidates data types from v2.3.1.
+ * HL7 v2.4 strategy. Version data comes from the 2.4 profile.
  */
 public class Hl7V24Strategy extends Hl7V231Strategy {
 

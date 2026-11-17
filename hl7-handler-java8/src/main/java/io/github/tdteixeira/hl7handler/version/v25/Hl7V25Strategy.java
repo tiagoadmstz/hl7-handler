@@ -4,7 +4,7 @@ import io.github.tdteixeira.hl7handler.model.Hl7Version;
 import io.github.tdteixeira.hl7handler.version.v24.Hl7V24Strategy;
 
 /**
- * HL7 v2.5 strategy: classic baseline version.
+ * HL7 v2.5 strategy, the baseline version. Version data comes from the 2.5 profile.
  */
 public class Hl7V25Strategy extends Hl7V24Strategy {
 

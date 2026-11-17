@@ -8,6 +8,13 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [Não Lançado]
 
 ### Adicionado
+- `Hl7Handler.builder()` passa a aceitar `keepEmptyStrings(boolean)` para devolver strings vazias em vez de `null` nos campos ausentes e `converter(nome, conversor)` para registrar conversores customizados usados em `tipo` no YAML, validados já no `build()`
+- Validação do mapeamento YAML no carregamento (`Hl7MappingValidator`): coordenadas, especificações de lista, tipos e faixas de `versoes`/`porVersao` inválidos, além de chaves YAML duplicadas (leitura com `STRICT_DUPLICATE_DETECTION`), lançam `Hl7MappingException` com o caminho do nó no YAML
+- Mapeamento YAML semântico avançado por versão com suporte a faixas (`Hl7VersionRange`), sobreposição hierárquica por especificidade (`porVersao`), validação de versões suportadas (`versoes`) e exceção especializada `Hl7MappingException`
+- Conversão tipada em mapeamentos YAML (`Hl7TypeConverter`) com suporte nativo a `texto`, `numero` (Long / Double), `data` (`Temporal` via `Hl7DateTime`), `booleano` (S/N, 1/0, SIM/NAO, TRUE/FALSE) e registro dinâmico de conversores customizados
+- Mapeamento de coleções e repetições para listas estruturadas a partir de segmentos múltiplos (`lista: "OBX[*]"`) e repetições de campos (`lista: "PID.13[*]"`), guiado por template de `item`
+- Suporte a constantes estáticas (`valor`), resolução de caminho alternativo com fallback (`fallback`), coordenadas semânticas (`@event`, `@patientId`) e controle de campos ausentes com retorno padrão `null` (ou strings vazias via `keepEmptyStrings`)
+- Suíte completa de testes de mapeamento `Hl7MappingTest` com 14 novos cenários e paridade 100% nos três módulos (`hl7-handler-core`, `hl7-handler-java11`, `hl7-handler-java8`)
 - Arquitetura Strategy Pattern por versão HL7 (`io.github.tdteixeira.hl7handler.version` e subpacotes `v21` a `v28`), desacoplando regras de MSH-9, MSH-18, truncamento MSH-2, timestamp de cabeçalho (TS/DTM) e coordenadas padrão de evento (`EVN.1`/`MSH.9.2`) e paciente (`PID.2.1`/`PID.3.1`) nos três módulos
 - `Hl7VersionStrategyRegistry` thread-safe para resolução exata, floor e baseline (v2.5) de estratégias de versão
 - `Hl7Version` transformada em tipo imutável aberto e comparável (`Comparable<Hl7Version>`), preservando versões como `2.9` e `2.8.2` sem forçá-las a `UNKNOWN`
@@ -41,10 +48,17 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - `hl7-handler-core` passa a exigir Java 17 (antes 25) e usa Jackson 3
 - Build com JDK 25 via Maven Toolchains; testes rodam em JDK 8, 11, 17 e 25
 - Nos artefatos de Java 8 e 11, `Hl7Delimiters` é uma classe final (no core continua `record`)
+- Strategies de versão passam a ler os dados do perfil `.properties` (fonte única), incluindo as novas chaves `event.coordinate` e `patient_id.coordinate`
 
 ### Consertado
+- Mapa com chaves de negócio, como `exame: {valor: OBX.5, unidade: OBX.6}`, passa a ser lido como grupo e não mais como constante ou coordenada: uma mapa só é diretiva quando todas as suas chaves pertencem ao conjunto dela (`lista`/`list`/`item`, `valor`/`value`/`tipo`/`type`, `hl7`/`path`/`campo`/`fallback`/`padrao`/`tipo`/`type`)
 - `fromMshHeader` não invade campos subsequentes com MSH-2 curto
 - Eliminação de delimitadores fixos (`&` e `^`) no parser e modelo
+- `MllpStreamReader.readMessage` não perde mais o byte seguinte ao trailer entre chamadas consecutivas; em stream sem mark e sem pushback, trailer ausente vira `MllpFramingException`
+- `MllpStreamReader` ignora LF (0x0A) e CR fora de uma mensagem, em vez de lançar exceção com `requireFraming` ativo
+- `Hl7AckGenerator` escapa o texto da MSA-3 e copia MSH-3 a MSH-6 e MSA-2 em forma crua, preservando componentes, inclusive no MSH-10 do ACK
+- `MllpStreamReader.wrap` respeita o charset do MSH-18 em vez de usar sempre o charset padrão
+- `\Xhh\` passa a ser decodificado com o charset da mensagem (MSH-18), com UTF-8 como padrão
 
 ### Removido
 - Dependências não usadas `commons-lang3` e `commons-collections4`

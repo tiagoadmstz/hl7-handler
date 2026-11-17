@@ -1,10 +1,12 @@
 package io.github.tdteixeira.hl7handler;
 
+import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.github.tdteixeira.hl7handler.api.DefaultHl7Reader;
 import io.github.tdteixeira.hl7handler.api.Hl7Reader;
 import io.github.tdteixeira.hl7handler.binding.Hl7JsonBinder;
 import io.github.tdteixeira.hl7handler.mapping.Hl7ToMapTransformer;
+import io.github.tdteixeira.hl7handler.mapping.Hl7TypeConverter;
 import io.github.tdteixeira.hl7handler.mapping.YamlMappingLoader;
 import io.github.tdteixeira.hl7handler.model.Hl7Delimiters;
 import io.github.tdteixeira.hl7handler.model.Hl7Message;
@@ -22,6 +24,8 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -49,7 +53,9 @@ public final class Hl7Handler {
      * Creates a new fluent reader instance backed by the default global parser registry.
      */
     public static Hl7Reader reader() {
-        YAMLMapper yamlMapper = YAMLMapper.builder().build();
+        YAMLMapper yamlMapper = YAMLMapper.builder()
+            .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
+            .build();
         return new DefaultHl7Reader(
             Hl7ParserRegistry.getInstance(),
             new YamlMappingLoader(yamlMapper),
@@ -127,8 +133,28 @@ public final class Hl7Handler {
         private Path mappingPath;
         private InputStream mappingStream;
         private String mappingContent;
+        private boolean keepEmptyStrings;
+        private final Map<String, Hl7TypeConverter> converters = new LinkedHashMap<>();
 
         public Builder() {}
+
+        /**
+         * Keeps empty HL7 values as empty strings instead of null in the mapped output.
+         */
+        public Builder keepEmptyStrings(boolean keepEmptyStrings) {
+            this.keepEmptyStrings = keepEmptyStrings;
+            return this;
+        }
+
+        /**
+         * Registers a custom type converter usable as {@code tipo} in mapping YAML. Ignored when the name or converter is null or blank.
+         */
+        public Builder converter(String name, Hl7TypeConverter converter) {
+            if (name != null && !name.trim().isEmpty() && converter != null) {
+                converters.put(name.trim().toLowerCase(Locale.ROOT), converter);
+            }
+            return this;
+        }
 
         public Builder parserRegistry(Hl7ParserRegistry registry) {
             this.registry = registry;
@@ -185,9 +211,11 @@ public final class Hl7Handler {
         }
 
         public Hl7Reader build() {
-            YAMLMapper yamlMapper = YAMLMapper.builder().build();
+            YAMLMapper yamlMapper = YAMLMapper.builder()
+                .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
+                .build();
             YamlMappingLoader yamlLoader = new YamlMappingLoader(yamlMapper);
-            Hl7ToMapTransformer transformer = new Hl7ToMapTransformer();
+            Hl7ToMapTransformer transformer = new Hl7ToMapTransformer(keepEmptyStrings, converters);
             Hl7JsonBinder jsonBinder = new Hl7JsonBinder();
             MllpStreamReader mllpReader = new MllpStreamReader(charset);
 
