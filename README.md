@@ -171,6 +171,19 @@ Inicia o Quarkus em modo desenvolvimento (Live Coding) na porta `8080`:
 
 ---
 
+## ⚡ Desempenho
+
+O parser separa linhas, segmentos, repetições, componentes e subcomponentes por varredura de caracteres (`indexOf`), sem `String.split` com regex. Medição com JMH no módulo `hl7-handler-benchmarks`, tempo médio por operação (menor é melhor):
+
+| Benchmark | Baseline (regex split) | Após (varredura) | Ganho |
+|---|---|---|---|
+| `parseAdtV25` | 24,70 µs ± 1,34 | 9,49 µs ± 3,03 | 61,6% |
+| `parseMindrayOruV26` | 34,44 µs ± 0,97 | 9,45 µs ± 3,70 | 72,5% |
+| `parseOruWith200Obx` | 1.275,92 µs ± 674,02 | 340,14 µs ± 47,02 | 73,3% |
+| `mapPaciente` | 35,06 µs ± 35,80 | 16,25 µs ± 14,34 | 53,7% |
+
+Ambiente: OpenJDK 25.0.1 (Temurin), AMD Ryzen 5 5625U (6 núcleos / 12 threads), Windows 11 Home. JMH 1.37 com `AverageTime`, microssegundos, 1 fork, 3 aquecimentos de 1 s e 5 medições de 1 s; `±` é o intervalo de confiança de 99,9% do JMH. Baseline e após foram medidos em execuções separadas na mesma máquina, então a variância é maior nos casos com erro alto. Comandos completos em [`hl7-handler-benchmarks/README.md`](hl7-handler-benchmarks/README.md).
+
 ## 💻 Exemplos de Uso no Código
 
 ### 1. Detecção Automática e Extração de Coordenadas

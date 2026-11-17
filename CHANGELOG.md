@@ -45,6 +45,7 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - Artefatos independentes `hl7-handler-java8` (Java 8) e `hl7-handler-java11` (Java 11 a 16), com Jackson 2, código e testes próprios e a mesma API do `hl7-handler-core`
 - `module-info` no `hl7-handler-core` e no `hl7-handler-java11`; `Automatic-Module-Name` no `hl7-handler-java8`
 - Amostras e testes de compatibilidade por versão HL7 (2.1 a 2.9, sem MSH-12, MSH-2 curto e com 5 caracteres), em cada artefato
+- Módulo `hl7-handler-benchmarks` com benchmarks JMH do parser e do mapeamento (`Hl7Processor.read(...).toMap()`), incluído só pelo perfil `benchmarks` e não publicado
 
 ### Mudado
 - `Hl7Handler.builder().build()` passa a devolver `Hl7Processor` (mudança incompatível); para o `Hl7Reader` anterior usar `Hl7Handler.builder()...reader()`
@@ -56,6 +57,7 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - Build com JDK 25 via Maven Toolchains; testes rodam em JDK 8, 11, 17 e 25
 - Nos artefatos de Java 8 e 11, `Hl7Delimiters` é uma classe final (no core continua `record`)
 - Strategies de versão passam a ler os dados do perfil `.properties` (fonte única), incluindo as novas chaves `event.coordinate` e `patient_id.coordinate`
+- `DefaultHl7Parser` e `Hl7VersionDetector` deixam de usar `String.split` com regex: linhas, campos, repetições, componentes e subcomponentes são separados por varredura de caracteres (`indexOf`), com o mesmo resultado (campos vazios no fim são mantidos); o tempo do parser cai de 54% a 73% (ver a seção Desempenho do README)
 
 ### Consertado
 - Mapa com chaves de negócio, como `exame: {valor: OBX.5, unidade: OBX.6}`, passa a ser lido como grupo e não mais como constante ou coordenada: uma mapa só é diretiva quando todas as suas chaves pertencem ao conjunto dela (`lista`/`list`/`item`, `valor`/`value`/`tipo`/`type`, `hl7`/`path`/`campo`/`fallback`/`padrao`/`tipo`/`type`)

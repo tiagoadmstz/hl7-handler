@@ -3,8 +3,6 @@ package io.github.tdteixeira.hl7handler.parser;
 import io.github.tdteixeira.hl7handler.model.Hl7Delimiters;
 import io.github.tdteixeira.hl7handler.model.Hl7Version;
 
-import java.util.regex.Pattern;
-
 /**
  * High-performance detector that identifies the HL7 version directly from MSH-12
  * without parsing the whole message payload first.
@@ -94,23 +92,21 @@ public final class Hl7VersionDetector {
         }
 
         String mshLine = rawHl7.substring(mshIndex, lineEnd);
-        String[] fields = mshLine.split(Pattern.quote(String.valueOf(fieldSep)), -1);
-
-        // MSH-1 is the separator itself.
-        // fields[0] = "MSH"
-        // fields[1] = encoding characters (MSH-2)
-        // fields[2] = MSH-3
-        // ...
-        // fields[11] = MSH-12 (Version ID)
-        if (fields.length > 11) {
-            String versionField = fields[11];
-            // Might have component separator, e.g. "2.5^USA"
-            if (versionField.indexOf(delimiters.componentSeparator()) != -1) {
-                versionField = versionField.substring(0, versionField.indexOf(delimiters.componentSeparator()));
+        // MSH-1 is the separator itself, so MSH-12 starts after the 11th separator.
+        int fieldStart = 0;
+        for (int i = 0; i < 11; i++) {
+            int sep = mshLine.indexOf(fieldSep, fieldStart);
+            if (sep == -1) {
+                return Hl7Version.UNKNOWN;
             }
-            return Hl7Version.fromIdentifier(versionField);
+            fieldStart = sep + 1;
         }
-
-        return Hl7Version.UNKNOWN;
+        int fieldEnd = mshLine.indexOf(fieldSep, fieldStart);
+        String versionField = fieldEnd == -1 ? mshLine.substring(fieldStart) : mshLine.substring(fieldStart, fieldEnd);
+        // Might have component separator, e.g. "2.5^USA"
+        if (versionField.indexOf(delimiters.componentSeparator()) != -1) {
+            versionField = versionField.substring(0, versionField.indexOf(delimiters.componentSeparator()));
+        }
+        return Hl7Version.fromIdentifier(versionField);
     }
 }

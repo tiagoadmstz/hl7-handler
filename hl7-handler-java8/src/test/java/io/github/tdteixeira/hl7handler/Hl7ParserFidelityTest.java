@@ -4,6 +4,7 @@ import io.github.tdteixeira.hl7handler.model.Hl7Delimiters;
 import io.github.tdteixeira.hl7handler.model.Hl7Escapes;
 import io.github.tdteixeira.hl7handler.model.Hl7Field;
 import io.github.tdteixeira.hl7handler.model.Hl7Message;
+import io.github.tdteixeira.hl7handler.model.Hl7Segment;
 import io.github.tdteixeira.hl7handler.writer.Hl7Writer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class Hl7ParserFidelityTest {
 
     private static final String SAMPLES = "/samples/versions/";
+
+    private static final String EDGE_HEADER = "MSH|^~\\&|SIS|HOSP|LAB|HOSP|20261117120000||ADT^A01|MSG202611170001|P|2.5\r";
 
     private static String sample(String fileName) {
         return TestResources.read(SAMPLES + fileName);
@@ -219,6 +222,51 @@ class Hl7ParserFidelityTest {
         assertRoundtrip("v29-adt.hl7");
         assertRoundtrip("no-msh12-adt.hl7");
         assertRoundtrip("short-msh2-adt.hl7");
+    }
+
+    @Test
+    @DisplayName("Mantém campos vazios no fim do segmento")
+    void shouldKeepTrailingEmptyFields() {
+        Hl7Message message = Hl7Handler.reader().from(EDGE_HEADER + "PID|1||||").toMessage();
+
+        assertThat(message.getSegment("PID").get().getFields()).hasSize(5);
+    }
+
+    @Test
+    @DisplayName("Mantém repetição vazia no meio do campo")
+    void shouldKeepEmptyRepetitionInTheMiddle() {
+        Hl7Message message = Hl7Handler.reader().from(EDGE_HEADER + "OBX|1|ST|CODE||a~~b").toMessage();
+        Hl7Field field = message.getSegment("OBX").get().getField(5);
+
+        assertThat(field.getRepetitions()).hasSize(3);
+        assertThat(field.getRepetitions().get(1).get(0).getValue()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Mantém subcomponente vazio após separador final")
+    void shouldKeepTrailingEmptySubcomponent() {
+        Hl7Message message = Hl7Handler.reader().from(EDGE_HEADER + "OBX|1|ST|x&").toMessage();
+        Hl7Field field = message.getSegment("OBX").get().getField(3);
+
+        assertThat(field.getComponents().get(0).getSubcomponents()).containsExactly("x", "");
+    }
+
+    @Test
+    @DisplayName("Lê segmento que contém apenas o nome")
+    void shouldParseSegmentWithOnlyName() {
+        Hl7Message message = Hl7Handler.reader().from(EDGE_HEADER + "ZZZ").toMessage();
+
+        assertThat(message.getSegment("ZZZ").get().getFields()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Separa segmentos com quebras CRLF, CR e LF na mesma mensagem")
+    void shouldSplitSegmentsWithMixedLineEndings() {
+        String raw = EDGE_HEADER + "\r\nPID|1\rOBX|1|ST|A\nOBX|2|ST|B\r\n";
+
+        Hl7Message message = Hl7Handler.reader().from(raw).toMessage();
+
+        assertThat(message.getSegments()).extracting(Hl7Segment::getName).containsExactly("MSH", "PID", "OBX", "OBX");
     }
 
     private void assertRoundtrip(String fileName) {
