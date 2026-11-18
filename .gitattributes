@@ -1,39 +1,25 @@
-﻿# Auto detect text files and normalize line endings to LF
-* text=auto
+* text=auto eol=lf
 
-# Java files
 *.java text eol=lf
-*.class binary
-*.jar binary
-
-# Maven
-pom.xml text eol=lf
-target/ export-ignore
-
-# YAML
+*.xml text eol=lf
+*.properties text eol=lf
 *.yaml text eol=lf
 *.yml text eol=lf
-
-# JSON
 *.json text eol=lf
-
-# Markdown
 *.md text eol=lf
-
-# Shell scripts
+*.hl7 text eol=lf
 *.sh text eol=lf
+mvnw text eol=lf
 
-# Windows shell scripts
 *.bat text eol=crlf
 *.cmd text eol=crlf
 
-# Git
-.gitignore text eol=lf
-.gitattributes text eol=lf
-
-# Compiled files
+*.class binary
+*.jar binary
 *.o binary
 *.a binary
 *.so binary
 *.exe binary
 *.dll binary
+
+target/ export-ignore
