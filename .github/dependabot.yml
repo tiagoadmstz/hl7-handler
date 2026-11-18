@@ -6,6 +6,13 @@ updates:
       interval: weekly
     cooldown:
       default-days: 14
+    ignore:
+      - dependency-name: "org.junit.jupiter:*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "org.junit.platform:*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "org.apache.maven.plugins:maven-javadoc-plugin"
+        versions: [">= 3.12.0"]
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
