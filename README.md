@@ -66,17 +66,19 @@ Os artefatos são publicados no GitHub Packages, que exige autenticação mesmo 
 </repositories>
 ```
 
-No `~/.m2/settings.xml`, configure o servidor `github` com um token de acesso pessoal com escopo `read:packages`. Use a variável de ambiente em vez de gravar o token no arquivo:
+No `~/.m2/settings.xml`, configure o servidor `github` com um **token clássico** (*Personal access token (classic)*) com o escopo `read:packages`. O registro Maven do GitHub Packages não aceita token *fine-grained*. Use uma variável de ambiente em vez de gravar o token no arquivo:
 
 ```xml
 <servers>
     <server>
         <id>github</id>
         <username>SEU_USUARIO_GITHUB</username>
-        <password>${env.GITHUB_TOKEN}</password>
+        <password>${env.GITHUB_PACKAGES_TOKEN}</password>
     </server>
 </servers>
 ```
+
+Se o `settings.xml` tiver um `<mirror>` com `<mirrorOf>*</mirrorOf>` (Nexus, Archiva, Artifactory), acrescente `,!github` ao `mirrorOf`. Sem isso, o pedido ao GitHub Packages é desviado para o mirror.
 
 Adicione o artefato correspondente à versão do Java do projeto (ver a tabela acima):
 
