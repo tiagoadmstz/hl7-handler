@@ -5,9 +5,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.github.tdteixeira.hl7handler</groupId>
+        <groupId>io.github.tiagoadmstz.hl7handler</groupId>
         <artifactId>hl7-handler-examples</artifactId>
-        <version>0.1.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>example-spring</artifactId>
@@ -34,12 +34,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.github.tdteixeira.hl7handler</groupId>
+            <groupId>io.github.tiagoadmstz.hl7handler</groupId>
             <artifactId>hl7-handler-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.github.tdteixeira.hl7handler</groupId>
+            <groupId>io.github.tiagoadmstz.hl7handler</groupId>
             <artifactId>example-stub</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -58,6 +58,11 @@
             <groupId>tools.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>2.22</version>
         </dependency>
         <dependency>
             <groupId>org.springdoc</groupId>

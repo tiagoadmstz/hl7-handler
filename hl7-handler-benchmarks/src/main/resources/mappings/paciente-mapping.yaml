@@ -1,0 +1,23 @@
+version: "2.5"
+description: "Mapeamento semântico De-Para de mensagem de Admissão/Paciente ADT_A01"
+mappings:
+  mensagemId: "MSH.10"
+  tipoMensagem: "MSH.9.1"
+  evento: "MSH.9.2"
+  versaoHl7: "MSH.12"
+  paciente:
+    prontuario: "PID.3.1"
+    nome: "PID.5.2"
+    sobrenome: "PID.5.1"
+    dataNascimento: "PID.7"
+    sexo: "PID.8"
+    telefone: "PID.13"
+    endereco:
+      logradouro: "PID.11.1"
+      cidade: "PID.11.3"
+      uf: "PID.11.4"
+      cep: "PID.11.5"
+  internacao:
+    leito: "PV1.3.2"
+    quarto: "PV1.3.1"
+    medico: "PV1.7.2"

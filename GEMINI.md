@@ -4,7 +4,7 @@ Biblioteca Java para mensagens HL7 v2: parser estrutural multi-versão, detecç�
 
 ## Módulos e Tecnologias
 
-Três módulos independentes com a mesma API pública (`io.github.tdteixeira.hl7handler`):
+Três módulos independentes com a mesma API pública (`io.github.tiagoadmstz.hl7handler`):
 
 | Módulo | Java mínimo | Jackson | Sintaxe |
 |---|---|---|---|

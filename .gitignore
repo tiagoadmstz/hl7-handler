@@ -50,3 +50,6 @@ Thumbs.db
 # IDE e ferramentas locais
 .vscode/
 .github/modernize/
+
+# Flatten plugin
+.flattened-pom.xml

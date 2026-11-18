@@ -1,0 +1,22 @@
+version: "2.6"
+description: "Sinais vitais de monitor multiparamétrico (ORU_R01 2.6)"
+mappings:
+  idMensagem: "MSH.10"
+  dispositivo: "MSH.3.2"
+  dataHora:
+    hl7: "MSH.7"
+    tipo: data
+  prontuario: "PID.3.1"
+  sinais:
+    lista: "OBX[*]"
+    item:
+      codigo: "3.1"
+      nome: "3.2"
+      valor:
+        hl7: "5"
+        tipo: numero
+      unidade: "6"
+      referencia: "7"
+      medidoEm:
+        hl7: "14"
+        tipo: data
