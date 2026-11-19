@@ -34,14 +34,14 @@ public class ParserBenchmark {
     private DefaultHl7Parser parser;
     private Hl7Processor processor;
     private String adtV25;
-    private String mindrayOruV26;
+    private String monitorOruV26;
     private String oruWith200Obx;
 
     @Setup(Level.Trial)
     public void setUp() {
         parser = new DefaultHl7Parser();
         adtV25 = readResource("/samples/sample-v25.hl7");
-        mindrayOruV26 = readResource("/samples/versions/v26-mindray-oru.hl7");
+        monitorOruV26 = readResource("/samples/versions/v26-monitor-oru.hl7");
         oruWith200Obx = buildOruWith200Obx();
         processor = Hl7Handler.builder()
                 .withMappingContent(readResource("/mappings/paciente-mapping.yaml"))
@@ -54,8 +54,8 @@ public class ParserBenchmark {
     }
 
     @Benchmark
-    public Hl7Message parseMindrayOruV26() {
-        return parser.parse(mindrayOruV26);
+    public Hl7Message parseMonitorOruV26() {
+        return parser.parse(monitorOruV26);
     }
 
     @Benchmark

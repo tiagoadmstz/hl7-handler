@@ -142,9 +142,9 @@ class Hl7VersionProfileAndDateTimeTest {
         assertThat(tFrac).isInstanceOf(LocalDateTime.class);
         assertThat(((LocalDateTime) tFrac).getNano()).isEqualTo(500000000);
 
-        TemporalAccessor tMindray = Hl7DateTime.parse("20261014094500.0000-0300");
-        assertThat(tMindray).isInstanceOf(OffsetDateTime.class);
-        OffsetDateTime odt = (OffsetDateTime) tMindray;
+        TemporalAccessor tMonitor = Hl7DateTime.parse("20261014094500.0000-0300");
+        assertThat(tMonitor).isInstanceOf(OffsetDateTime.class);
+        OffsetDateTime odt = (OffsetDateTime) tMonitor;
         assertThat(odt.getOffset()).isEqualTo(ZoneOffset.ofHours(-3));
         assertThat(odt.toLocalDateTime()).isEqualTo(LocalDateTime.of(2026, 10, 14, 9, 45, 0));
 

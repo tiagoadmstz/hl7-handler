@@ -35,7 +35,7 @@ A execução completa leva cerca de 35 segundos. Os resultados saem no console e
 | Benchmark | O que mede |
 |---|---|
 | `parseAdtV25` | `DefaultHl7Parser.parse` de uma ADT v2.5 (`samples/sample-v25.hl7`) |
-| `parseMindrayOruV26` | `DefaultHl7Parser.parse` de uma ORU v2.6 de monitor (`samples/versions/v26-mindray-oru.hl7`) |
+| `parseMonitorOruV26` | `DefaultHl7Parser.parse` de uma ORU v2.6 de monitor (`samples/versions/v26-monitor-oru.hl7`) |
 | `parseOruWith200Obx` | `DefaultHl7Parser.parse` de uma ORU v2.5 fictícia com 200 OBX, com componentes, subcomponentes e repetições |
 | `mapPaciente` | `Hl7Processor.read(...).toMap()` com o mapeamento `mappings/paciente-mapping.yaml` |
 

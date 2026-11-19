@@ -207,7 +207,7 @@ class Hl7ParserFidelityTest {
         assertRoundtrip("v231-oru.hl7");
         assertRoundtrip("v24-adt.hl7");
         assertRoundtrip("v251-adt.hl7");
-        assertRoundtrip("v26-mindray-oru.hl7");
+        assertRoundtrip("v26-monitor-oru.hl7");
         assertRoundtrip("v27-adt.hl7");
 
         String v25 = TestResources.read("/samples/sample-v25.hl7");

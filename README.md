@@ -451,7 +451,7 @@ O parser separa linhas, segmentos, repetições, componentes e subcomponentes po
 | Benchmark | Baseline (regex split) | Após (varredura) | Ganho |
 |---|---|---|---|
 | `parseAdtV25` | 24,70 µs ± 1,34 | 9,49 µs ± 3,03 | 61,6% |
-| `parseMindrayOruV26` | 34,44 µs ± 0,97 | 9,45 µs ± 3,70 | 72,5% |
+| `parseMonitorOruV26` | 34,44 µs ± 0,97 | 9,45 µs ± 3,70 | 72,5% |
 | `parseOruWith200Obx` | 1.275,92 µs ± 674,02 | 340,14 µs ± 47,02 | 73,3% |
 | `mapPaciente` | 35,06 µs ± 35,80 | 16,25 µs ± 14,34 | 53,7% |
 
