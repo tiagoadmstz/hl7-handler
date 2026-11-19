@@ -25,8 +25,8 @@ O número **7** faz alusão direta à **7ª camada do Modelo OSI (a Camada de Ap
    - Converte mensagens HL7 diretamente em classes do seu domínio com segurança de tipos.
 5. **Arquitetura SOLID**:
    - Extensibilidade total para adicionar novas versões sem alterar as existentes (Open/Closed Principle).
-6. **Leitor de HL7 v3 e CDA R2 (`Hl7Handler.v3()`)**:
-   - Lê mensagens v3 e documentos CDA R2 em XML, com parser seguro (`javax.xml`) e mapeamento YAML por XPath.
+6. **HL7 v3, CDA R2 e C-CDA (`Hl7Handler.v3()`)**:
+   - Lê e escreve mensagens v3 e documentos CDA em XML com o mesmo mapeamento YAML por XPath, gera o ACK v3 (`MCCI_IN000002UV01`) e valida contra XSD, só com `javax.xml` e parser seguro.
 7. **Módulo de Exemplos Isolado**:
    - Exemplos em **Java Puro**, **Spring Boot** e **Quarkus** mantidos em módulo desacoplado do ciclo de build da biblioteca core.
 
@@ -146,8 +146,8 @@ SumarioVO vo = result.bindTo(SumarioVO.class);
 ```
 
 - O `Hl7V3Processor` é imutável e thread-safe, como o `Hl7Processor`. O `toMap()` é calculado uma vez, e o `toRawJson()` converte o XML inteiro (atributos como `@nome`, texto como `#text`).
-- Cada tipo de documento tem uma estratégia em `v3.version`: `CdaR2Strategy` e `Hl7V3MessageStrategy`. Ela define o `versionIdentifier`, os avisos (`typeId` diferente de `POCD_HD000040`, mensagem sem `interactionId`, `ITSVersion` diferente de `XML_1.0`) e as coordenadas semânticas.
-- Para perfis como C-CDA ou perfis nacionais, registre a sua estratégia num `Hl7V3StrategyRegistry` e passe-o em `Hl7V3Builder.strategyRegistry(...)`. As estratégias customizadas têm prioridade sobre as embutidas.
+- Cada tipo de documento tem uma estratégia em `v3.version`: `CcdaStrategy`, `CdaR2Strategy` e `Hl7V3MessageStrategy`, consultadas nessa ordem. Ela define o `versionIdentifier`, os avisos (`typeId` diferente de `POCD_HD000040`, mensagem sem `interactionId`, `ITSVersion` diferente de `XML_1.0`) e as coordenadas semânticas.
+- Para perfis nacionais ou outros guias, registre a sua estratégia num `Hl7V3StrategyRegistry` e passe-o em `Hl7V3Builder.strategyRegistry(...)`. As estratégias customizadas têm prioridade sobre as embutidas.
 - Raiz no namespace v3 sem estratégia correspondente é lida como `MESSAGE`, com aviso em `warnings()`.
 - **Segurança:** o parser recusa `DOCTYPE`, entidades externas e `XInclude`, o que evita XXE. XML malformado ou fora do namespace v3 lança `Hl7ParseException`.
 
@@ -179,6 +179,93 @@ mappings:
   - mensagem: `#messageId`, `#interactionId`, `#creationTime`, `#patientId` e `#sender`.
 - **`namespace(...)` no builder:** se o prefixo também estiver no `namespaces:` do YAML, vale o do builder. `hl7`, `sdtc` e `xsi` não podem ser redefinidos.
 - **Validação no `build()`:** XPath que não compila, prefixo não declarado, `tipo` desconhecido, `formato` inválido e `lista` sem `item` lançam `Hl7MappingException` com o caminho do nó. Um `formato` diferente do documento lido falha no `toMap()`.
+
+### C-CDA
+
+Um `ClinicalDocument` com o `templateId` do US Realm Header (`2.16.840.1.113883.10.20.22.1.1`) é lido pela `CcdaStrategy`. O formato continua `CDA`, e o `versionIdentifier` vem da `extension` do header:
+
+| `extension` | `versionIdentifier` |
+|---|---|
+| `2015-08-01` | `C-CDA-R2.1` |
+| `2014-06-09` | `C-CDA-R2.0` |
+| ausente | `C-CDA-R1.1` |
+| outra | `C-CDA` |
+
+- **Coordenadas:** além das do CDA, há `#documentTemplateId`, `#patientGiven`, `#patientFamily`, `#patientBirthTime`, `#patientGender`, `#authorTime` e `#custodianName`.
+- **Avisos:** `code/@codeSystem` diferente de LOINC, `recordTarget` ausente e `languageCode` ausente.
+
+### Escrita v3
+
+O writer faz o caminho inverso da leitura, com o mesmo YAML: cada chave do `Map` (ou do VO) é gravada no XPath da mesma chave do mapeamento.
+
+```java
+private static final Hl7V3Writer WRITER = Hl7Handler.v3()
+    .withMapping(new File("caminho/para/prpa-escrita.yaml"))
+    .template(Path.of("caminho/para/template.xml"))   // opcional
+    .buildWriter();
+
+String xml = WRITER.write(Map.of("mensagemId", "MSG-001", "paciente", Map.of("nome", "Maria")));
+byte[] utf8 = WRITER.writeBytes(pacienteVO);
+```
+
+```yaml
+formato: MESSAGE
+raiz: PRPA_IN201301UV02          # usada quando não há template
+mappings:
+  mensagemId: "hl7:id/@extension"
+  versao: { xpath: "hl7:versionCode/@code", valor: "V3-2008N" }
+  paciente:
+    id: "hl7:controlActProcess/hl7:subject/hl7:registrationEvent/hl7:subject1/hl7:patient/hl7:id[@root='2.16.840.1.113883.13.236']/@extension"
+    nome: "hl7:controlActProcess/hl7:subject/hl7:registrationEvent/hl7:subject1/hl7:patient/hl7:patientPerson/hl7:name/hl7:given"
+    nascimento: { xpath: "hl7:controlActProcess/hl7:subject/hl7:registrationEvent/hl7:subject1/hl7:patient/hl7:patientPerson/hl7:birthTime/@value", tipo: data }
+```
+
+- **Raiz:** vem do template, se houver, ou da chave `raiz` (ou `root`). Sem nenhum dos dois, `buildWriter()` falha.
+- **Caminhos graváveis:**
+  - cada passo é um elemento com predicados opcionais `[@attr='valor']` (o atributo é criado junto) ou `[n]`;
+  - o último passo pode ser um `@atributo`, um elemento (recebe o texto) ou `text()`;
+  - `//`, `..`, `|`, `*`, eixos e funções são recusados no `buildWriter()`, inclusive numa coordenada `#nome` que não seja gravável, como `#documentId`.
+- **Ordem dos elementos:** os elementos novos entram na ordem do YAML. Se o XSD exigir outra ordem, use um template com o esqueleto do documento: o writer preenche os elementos que já existem.
+- **Valores:**
+  - **Nulo ou ausente:** usa o `padrao`; sem `padrao`, nada é criado. O `fallback` é ignorado na escrita.
+  - **Constante:** `valor` com `xpath` é sempre gravado; sem `xpath`, a constante só vale na leitura.
+  - **Datas:** `LocalDate`, `LocalDateTime` e `OffsetDateTime`, e também uma string ISO com `tipo: data`, viram TS HL7 (`yyyyMMdd`, `yyyyMMddHHmmss`, `yyyyMMddHHmmss±zzzz`).
+  - **Conversores:** os demais conversores não têm caminho inverso, e o valor é gravado como texto.
+- **`lista` + `item`:** cria um elemento para cada item da lista, e os caminhos do `item` são relativos a ele.
+- **Saída e concorrência:** o XML sai em UTF-8, com declaração, indentado por padrão (`indent(false)` desliga). O `Hl7V3Writer` é imutável e thread-safe.
+- **Round-trip:** `Hl7V3Document.toXml()` serializa de volta um documento lido.
+
+### ACK v3
+
+```java
+Hl7V3Document mensagem = PROCESSOR.read(xml).document();
+String ack = Hl7Handler.generateV3Ack(mensagem);                                   // AA
+String erro = Hl7Handler.generateV3Ack(mensagem, Hl7V3AckCode.AE, "Paciente sem CNS");
+```
+
+O ACK é um `MCCI_IN000002UV01` com:
+- `id` novo e `creationTime` atual;
+- `processingCode` copiado da mensagem recebida;
+- `sender` e `receiver` invertidos em relação à mensagem recebida;
+- `acknowledgement` com o código (`AA`, `AE`, `AR`, `CA`, `CE` ou `CR`) e o `id` da mensagem recebida em `targetMessage`.
+
+Um texto não vazio vira `acknowledgementDetail`. Documento CDA lança `IllegalArgumentException`.
+
+### Validação por XSD
+
+```java
+Hl7V3Processor processor = Hl7Handler.v3()
+    .schema(Path.of("caminho/para/CDA.xsd"))
+    .schemaValidation(Hl7V3SchemaMode.STRICT)   // padrão; WARN só registra avisos
+    .build();
+```
+
+- **Modos:**
+  - **`STRICT`:** um documento fora do XSD lança `Hl7V3SchemaValidationException`, que estende `Hl7ParseException`, com `errors()` (linha, coluna e mensagem).
+  - **`WARN`:** os erros vão para `document().warnings()`.
+- **Carga do XSD:** o XSD é compilado uma vez no `build()`/`buildWriter()`. O `include`/`import` relativo funciona a partir do disco ou do classpath (`file` e `jar`), sem acesso à rede. O `xsi:schemaLocation` do documento é ignorado.
+- **Writer:** com XSD configurado, o `Hl7V3Writer` valida o XML gerado antes de devolvê-lo.
+- **XSDs oficiais:** a biblioteca não traz os XSDs da HL7, que têm licença própria. Baixe-os no site da HL7 e aponte o `schema(...)` para eles.
 
 ---
 
@@ -587,7 +674,7 @@ PacienteVO vo = PROCESSOR.read(rawHl7).bindTo(PacienteVO.class);
 Todas as exceções da biblioteca estendem `Hl7Exception`, que é não verificada (`RuntimeException`):
 
 - `Hl7Exception`: classe base, no pacote raiz `io.github.tiagoadmstz.hl7handler`.
-- `Hl7ParseException`: entrada ausente ou em branco, falha de leitura MLLP e, no v3, XML malformado, com `DOCTYPE` ou fora do namespace `urn:hl7-org:v3`.
+- `Hl7ParseException`: entrada ausente ou em branco, falha de leitura MLLP e, no v3, XML malformado, com `DOCTYPE` ou fora do namespace `urn:hl7-org:v3`. A subclasse `Hl7V3SchemaValidationException` indica um documento fora do XSD no modo `STRICT`.
 - `Hl7BindingException`: falha de serialização ou desserialização JSON, inclusive no `bindTo`.
 - `Hl7MappingException` (pacote `mapping`): mapeamento YAML inválido ou ausente.
 - `MllpFramingException` (pacote `network`): moldura MLLP violada (truncada, sem `0x0B` ou acima do limite de tamanho).
