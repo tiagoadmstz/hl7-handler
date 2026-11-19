@@ -1,0 +1,27 @@
+version: "2.6"
+description: "Spot-check de monitor multiparamétrico: valor do OBX-5 como texto, com o tipo do OBX-2"
+mappings:
+  idMensagem: "MSH.10"
+  dispositivo: "MSH.3.2"
+  dataHora:
+    hl7: "MSH.7"
+    tipo: data
+  prontuario: "PID.3.1"
+  equipamentoMac: "PV1.3.9"
+  leito: "PV1.3.10"
+  tipoColeta: "OBR.4.1"
+  medidoEm:
+    hl7: "OBR.7"
+    tipo: data
+  sinais:
+    lista: "OBX[*]"
+    item:
+      codigo: "3.1"
+      nome: "3.2"
+      subId: "4"
+      tipoValor: "2"
+      valor: "5"
+      unidade: "6.2"
+      medidoEm:
+        hl7: "14"
+        tipo: data
