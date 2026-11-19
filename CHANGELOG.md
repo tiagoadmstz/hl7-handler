@@ -7,6 +7,8 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Não Lançado]
 
+## [0.1.0] - 2026-11-19
+
 ### Adicionado
 - Preparo para publicação no GitHub Packages: JARs de `sources` e `javadoc` para `hl7-handler-core`, `hl7-handler-java11` e `hl7-handler-java8`, e versão controlada pela propriedade `revision` (POM publicado com a versão literal)
 - `Hl7Processor`, imutável e thread-safe, criado por `Hl7Handler.builder().build()`, com `read(String)`, `readBytes(byte[])`, `readMllp(InputStream)` (devolve `null` em fim de stream) e `hasMapping()`
