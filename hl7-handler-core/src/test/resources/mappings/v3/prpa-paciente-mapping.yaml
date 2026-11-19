@@ -1,0 +1,9 @@
+formato: MESSAGE
+mappings:
+  mensagemId: "#messageId"
+  interacao: "#interactionId"
+  remetente: "#sender"
+  paciente:
+    id: "#patientId"
+    nome: "hl7:controlActProcess//hl7:patientPerson/hl7:name/hl7:given"
+    sobrenome: "hl7:controlActProcess//hl7:patientPerson/hl7:name/hl7:family"

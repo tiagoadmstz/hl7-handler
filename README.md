@@ -25,7 +25,9 @@ O número **7** faz alusão direta à **7ª camada do Modelo OSI (a Camada de Ap
    - Converte mensagens HL7 diretamente em classes do seu domínio com segurança de tipos.
 5. **Arquitetura SOLID**:
    - Extensibilidade total para adicionar novas versões sem alterar as existentes (Open/Closed Principle).
-6. **Módulo de Exemplos Isolado**:
+6. **Leitor de HL7 v3 e CDA R2 (`Hl7Handler.v3()`)**:
+   - Lê mensagens v3 e documentos CDA R2 em XML, com parser seguro (`javax.xml`) e mapeamento YAML por XPath.
+7. **Módulo de Exemplos Isolado**:
    - Exemplos em **Java Puro**, **Spring Boot** e **Quarkus** mantidos em módulo desacoplado do ciclo de build da biblioteca core.
 
 ---
@@ -126,6 +128,60 @@ Versão desconhecida nunca bloqueia o parse: a leitura segue com o perfil mais p
 
 ---
 
+## 🩺 HL7 v3 e CDA R2
+
+O v3 é outra família, em XML, e por isso tem um leitor próprio: `Hl7Handler.v3()`. Ele lê **mensagens v3** (raiz como `PRPA_IN201301UV02`, com `interactionId`) e **documentos CDA R2** (`ClinicalDocument`). A raiz precisa estar no namespace `urn:hl7-org:v3`.
+
+```java
+private static final Hl7V3Processor CDA = Hl7Handler.v3()
+    .withMapping(new File("caminho/para/cda-mapeamento.yaml"))
+    .build();
+
+Hl7V3Result result = CDA.read(xml);              // ou read(InputStream) / readBytes(byte[])
+result.document().format();                      // Hl7V3Format.CDA
+result.document().versionIdentifier();           // "CDA-R2"
+result.document().get("hl7:title");              // "" quando o caminho não existe
+result.document().getAll("hl7:component//hl7:observation/hl7:code/@code");
+SumarioVO vo = result.bindTo(SumarioVO.class);
+```
+
+- O `Hl7V3Processor` é imutável e thread-safe, como o `Hl7Processor`. O `toMap()` é calculado uma vez, e o `toRawJson()` converte o XML inteiro (atributos como `@nome`, texto como `#text`).
+- Cada tipo de documento tem uma estratégia em `v3.version`: `CdaR2Strategy` e `Hl7V3MessageStrategy`. Ela define o `versionIdentifier`, os avisos (`typeId` diferente de `POCD_HD000040`, mensagem sem `interactionId`, `ITSVersion` diferente de `XML_1.0`) e as coordenadas semânticas.
+- Para perfis como C-CDA ou perfis nacionais, registre a sua estratégia num `Hl7V3StrategyRegistry` e passe-o em `Hl7V3Builder.strategyRegistry(...)`. As estratégias customizadas têm prioridade sobre as embutidas.
+- Raiz no namespace v3 sem estratégia correspondente é lida como `MESSAGE`, com aviso em `warnings()`.
+- **Segurança:** o parser recusa `DOCTYPE`, entidades externas e `XInclude`, o que evita XXE. XML malformado ou fora do namespace v3 lança `Hl7ParseException`.
+
+### Mapeamento v3 (XPath)
+
+```yaml
+formato: CDA                 # opcional: CDA ou MESSAGE
+namespaces:                  # opcional: prefixos além de hl7, sdtc e xsi
+  ext: "urn:exemplo"
+mappings:
+  documentoId: "#documentId"
+  titulo: "hl7:title"
+  paciente:
+    cns: "hl7:recordTarget/hl7:patientRole/hl7:id[@root='2.16.840.1.113883.13.236']/@extension"
+    nascimento: { xpath: "hl7:recordTarget/hl7:patientRole/hl7:patient/hl7:birthTime/@value", tipo: data }
+    sexo: { xpath: "hl7:recordTarget/hl7:patientRole/hl7:patient/hl7:administrativeGenderCode/@code", padrao: "U" }
+  origem: { valor: "CDA" }
+  exames:
+    lista: "hl7:component/hl7:structuredBody/hl7:component/hl7:section//hl7:observation"
+    item:
+      codigo: "hl7:code/@code"
+      valor: { xpath: "hl7:value/@value", tipo: numero }
+```
+
+- **Caminhos:** XPath 1.0, relativo à raiz do documento. Dentro de `item`, o caminho é relativo ao nó da lista. O XPath 1.0 não tem namespace padrão, então os elementos v3 sempre levam o prefixo `hl7:`.
+- **Diretivas:** as mesmas do v2, com `xpath` (ou `path`) no lugar de `hl7`. São elas `fallback` (outro XPath), `padrao` (valor fixo), `tipo`, `valor` e `lista` + `item`. Os conversores (`texto`, `numero`, `data`, `booleano` e os registrados em `converter(...)`) também são os do v2, e só recebem valores não vazios.
+- **Coordenadas semânticas** começam com `#`, sempre a partir da raiz:
+  - CDA: `#documentId`, `#patientId`, `#effectiveTime`, `#documentType` e `#title`;
+  - mensagem: `#messageId`, `#interactionId`, `#creationTime`, `#patientId` e `#sender`.
+- **`namespace(...)` no builder:** se o prefixo também estiver no `namespaces:` do YAML, vale o do builder. `hl7`, `sdtc` e `xsi` não podem ser redefinidos.
+- **Validação no `build()`:** XPath que não compila, prefixo não declarado, `tipo` desconhecido, `formato` inválido e `lista` sem `item` lançam `Hl7MappingException` com o caminho do nó. Um `formato` diferente do documento lido falha no `toMap()`.
+
+---
+
 ## 📦 Estrutura do Repositório
 
 ```
@@ -140,9 +196,12 @@ hl7-handler/
 │   │   ├── model/                           <- Hl7Message, Hl7Segment, Hl7Field, etc.
 │   │   ├── network/                         <- MllpStreamReader (Stream / ByteStream)
 │   │   ├── parser/                          <- Parsers e detecção de versão
+│   │   ├── v3/                              <- Leitor HL7 v3 e CDA R2 (parser XML, strategies, mapeamento XPath)
+│   │   ├── version/                         <- Strategies por versão v2
 │   │   └── writer/                          <- Serializador HL7 v2
 │   └── src/test/resources/
 │       ├── samples/versions/                <- Uma mensagem por versão HL7 (2.1 a 2.9) e casos de borda
+│       ├── samples/v3/                      <- Mensagens v3 e documentos CDA R2
 │       └── mappings/                        <- Exemplos de De-Para YAML
 ├── hl7-handler-java11/                      <- Artefato Java 11 a 16 (Jackson 2, module-info), mesma estrutura
 ├── hl7-handler-java8/                       <- Artefato Java 8 (Jackson 2, Automatic-Module-Name), mesma estrutura
@@ -528,7 +587,7 @@ PacienteVO vo = PROCESSOR.read(rawHl7).bindTo(PacienteVO.class);
 Todas as exceções da biblioteca estendem `Hl7Exception`, que é não verificada (`RuntimeException`):
 
 - `Hl7Exception`: classe base, no pacote raiz `io.github.tiagoadmstz.hl7handler`.
-- `Hl7ParseException`: entrada ausente ou em branco e falha de leitura MLLP.
+- `Hl7ParseException`: entrada ausente ou em branco, falha de leitura MLLP e, no v3, XML malformado, com `DOCTYPE` ou fora do namespace `urn:hl7-org:v3`.
 - `Hl7BindingException`: falha de serialização ou desserialização JSON, inclusive no `bindTo`.
 - `Hl7MappingException` (pacote `mapping`): mapeamento YAML inválido ou ausente.
 - `MllpFramingException` (pacote `network`): moldura MLLP violada (truncada, sem `0x0B` ou acima do limite de tamanho).

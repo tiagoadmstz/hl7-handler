@@ -1,0 +1,27 @@
+description: "Sumario de alta CDA R2 (dados ficticios)"
+formato: CDA
+mappings:
+  documentoId: "#documentId"
+  titulo: "hl7:title"
+  emissao: { xpath: "hl7:effectiveTime/@value", tipo: data }
+  origem: { valor: "CDA" }
+  paciente:
+    id: "#patientId"
+    cns: "hl7:recordTarget/hl7:patientRole/hl7:id[@root='2.16.840.1.113883.13.236']/@extension"
+    prontuario: "hl7:recordTarget/hl7:patientRole/hl7:id[@root='2.16.840.1.113883.19.5.99']/@extension"
+    nome: "hl7:recordTarget/hl7:patientRole/hl7:patient/hl7:name/hl7:given"
+    sobrenome: "hl7:recordTarget/hl7:patientRole/hl7:patient/hl7:name/hl7:family"
+    sexo: { xpath: "hl7:recordTarget/hl7:patientRole/hl7:patient/hl7:administrativeGenderCode/@code", padrao: "U" }
+    nascimento: { xpath: "hl7:recordTarget/hl7:patientRole/hl7:patient/hl7:birthTime/@value", tipo: data }
+    falecido: { xpath: "hl7:recordTarget/hl7:patientRole/hl7:patient/sdtc:deceasedInd/@value", tipo: booleano }
+    telefone: { xpath: "hl7:recordTarget/hl7:patientRole/hl7:telecom/@value", fallback: "hl7:custodian//hl7:telecom/@value" }
+  autor:
+    registro: "hl7:author/hl7:assignedAuthor/hl7:id/@extension"
+    nome: "hl7:author/hl7:assignedAuthor/hl7:assignedPerson/hl7:name/hl7:given"
+  exames:
+    lista: "hl7:component/hl7:structuredBody/hl7:component/hl7:section//hl7:observation"
+    item:
+      codigo: "hl7:code/@code"
+      descricao: "hl7:code/@displayName"
+      valor: { xpath: "hl7:value/@value", tipo: numero }
+      unidade: "hl7:value/@unit"
