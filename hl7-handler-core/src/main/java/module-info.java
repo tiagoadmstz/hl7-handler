@@ -1,4 +1,5 @@
 module io.github.tiagoadmstz.hl7handler {
+    requires java.xml;
     requires tools.jackson.core;
     requires tools.jackson.databind;
     requires tools.jackson.dataformat.yaml;
@@ -20,4 +21,10 @@ module io.github.tiagoadmstz.hl7handler {
     exports io.github.tiagoadmstz.hl7handler.version.v27;
     exports io.github.tiagoadmstz.hl7handler.version.v28;
     exports io.github.tiagoadmstz.hl7handler.writer;
+    exports io.github.tiagoadmstz.hl7handler.v3;
+    exports io.github.tiagoadmstz.hl7handler.v3.mapping;
+    exports io.github.tiagoadmstz.hl7handler.v3.parser;
+    exports io.github.tiagoadmstz.hl7handler.v3.version;
+    exports io.github.tiagoadmstz.hl7handler.v3.version.cda;
+    exports io.github.tiagoadmstz.hl7handler.v3.version.message;
 }

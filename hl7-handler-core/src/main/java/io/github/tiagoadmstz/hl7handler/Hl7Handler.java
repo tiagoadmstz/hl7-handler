@@ -18,6 +18,7 @@ import io.github.tiagoadmstz.hl7handler.parser.DefaultHl7Parser;
 import io.github.tiagoadmstz.hl7handler.parser.Hl7Parser;
 import io.github.tiagoadmstz.hl7handler.parser.Hl7ParserRegistry;
 import io.github.tiagoadmstz.hl7handler.parser.Hl7VersionDetector;
+import io.github.tiagoadmstz.hl7handler.v3.Hl7V3Builder;
 import io.github.tiagoadmstz.hl7handler.writer.Hl7Writer;
 import tools.jackson.core.StreamReadFeature;
 import tools.jackson.dataformat.yaml.YAMLMapper;
@@ -74,6 +75,13 @@ public final class Hl7Handler {
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Creates a new Builder for an HL7 v3 processor, which reads HL7 v3 messages and CDA R2 documents.
+     */
+    public static Hl7V3Builder v3() {
+        return new Hl7V3Builder();
     }
 
     /**
