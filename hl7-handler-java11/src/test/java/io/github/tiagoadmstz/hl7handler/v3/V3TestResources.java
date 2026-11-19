@@ -11,7 +11,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.io.UncheckedIOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 final class V3TestResources {
 
@@ -31,6 +35,22 @@ final class V3TestResources {
             return out.toByteArray();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    static URL url(String resourcePath) {
+        URL url = V3TestResources.class.getResource(resourcePath);
+        if (url == null) {
+            throw new IllegalArgumentException("Test resource not found: " + resourcePath);
+        }
+        return url;
+    }
+
+    static Path path(String resourcePath) {
+        try {
+            return Paths.get(url(resourcePath).toURI());
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException("Test resource has an invalid URI: " + resourcePath, e);
         }
     }
 

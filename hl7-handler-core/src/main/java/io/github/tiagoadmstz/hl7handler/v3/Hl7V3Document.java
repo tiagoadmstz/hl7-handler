@@ -2,6 +2,7 @@ package io.github.tiagoadmstz.hl7handler.v3;
 
 import io.github.tiagoadmstz.hl7handler.mapping.Hl7MappingException;
 import io.github.tiagoadmstz.hl7handler.v3.parser.Hl7V3Namespaces;
+import io.github.tiagoadmstz.hl7handler.v3.parser.Hl7V3Xml;
 import io.github.tiagoadmstz.hl7handler.v3.version.Hl7V3Strategy;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -180,6 +181,17 @@ public final class Hl7V3Document {
             } catch (XPathExpressionException e) {
                 throw new Hl7MappingException("Invalid XPath '" + resolved + "'", e);
             }
+        }
+    }
+
+    /**
+     * Serializes the parsed DOM back to UTF-8 XML, without added indentation. The DOM is read under the document lock.
+     *
+     * @return the XML text, with an XML declaration
+     */
+    public String toXml() {
+        synchronized (lock) {
+            return Hl7V3Xml.toXml(dom, false);
         }
     }
 

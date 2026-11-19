@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="urn:hl7-org:v3"
+           targetNamespace="urn:hl7-org:v3"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+
+  <xs:complexType name="IdType">
+    <xs:attribute name="root" type="xs:string" use="required"/>
+    <xs:attribute name="extension" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="CodeType">
+    <xs:attribute name="code" type="xs:string" use="required"/>
+    <xs:attribute name="codeSystem" type="xs:string"/>
+    <xs:attribute name="displayName" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="TsType">
+    <xs:attribute name="value" type="xs:string" use="required"/>
+  </xs:complexType>
+
+</xs:schema>

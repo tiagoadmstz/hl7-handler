@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <typeId root="2.16.840.1.113883.1.3" extension="POCD_HD000040"/>
+  <templateId root="2.16.840.1.113883.10.20.22.1.1" extension="2015-08-01"/>
+  <templateId root="2.16.840.1.113883.10.20.22.1.2" extension="2015-08-01"/>
+  <id root="2.16.840.1.113883.19.5" extension="CCD-0001"/>
+  <code code="34133-9" codeSystem="2.16.840.1.113883.6.1" displayName="Resumo de cuidados"/>
+  <title>Resumo de Cuidados</title>
+  <effectiveTime value="20261109143000-0300"/>
+  <confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25"/>
+  <languageCode code="pt-BR"/>
+  <recordTarget>
+    <patientRole>
+      <id root="2.16.840.1.113883.13.236" extension="700000000000002"/>
+      <patient>
+        <name>
+          <given>Maria</given>
+          <family>Exemplo</family>
+        </name>
+        <administrativeGenderCode code="F" codeSystem="2.16.840.1.113883.5.1"/>
+        <birthTime value="19800115"/>
+      </patient>
+    </patientRole>
+  </recordTarget>
+  <author>
+    <time value="20261109143000-0300"/>
+    <assignedAuthor>
+      <id root="2.16.840.1.113883.13.239" extension="CRM-00001"/>
+    </assignedAuthor>
+  </author>
+  <custodian>
+    <assignedCustodian>
+      <representedCustodianOrganization>
+        <id root="2.16.840.1.113883.19.5"/>
+        <name>Hospital Ficticio</name>
+      </representedCustodianOrganization>
+    </assignedCustodian>
+  </custodian>
+  <component>
+    <structuredBody/>
+  </component>
+</ClinicalDocument>

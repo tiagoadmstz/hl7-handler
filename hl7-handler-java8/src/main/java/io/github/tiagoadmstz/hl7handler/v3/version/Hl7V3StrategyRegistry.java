@@ -1,5 +1,6 @@
 package io.github.tiagoadmstz.hl7handler.v3.version;
 
+import io.github.tiagoadmstz.hl7handler.v3.version.cda.CcdaStrategy;
 import io.github.tiagoadmstz.hl7handler.v3.version.cda.CdaR2Strategy;
 import io.github.tiagoadmstz.hl7handler.v3.version.message.Hl7V3MessageStrategy;
 import org.w3c.dom.Element;
@@ -25,12 +26,14 @@ public final class Hl7V3StrategyRegistry {
     }
 
     /**
-     * Creates a new registry with the built-in strategies: CDA R2 first, then HL7 v3 messages.
+     * Creates a new registry with the built-in strategies, in lookup order: C-CDA, then CDA R2, then HL7 v3 messages.
+     * C-CDA comes first because a C-CDA document is also a CDA R2 document.
      *
      * @return a new registry; each call returns a separate instance
      */
     public static Hl7V3StrategyRegistry defaultRegistry() {
         Hl7V3StrategyRegistry registry = new Hl7V3StrategyRegistry();
+        registry.strategies.add(new CcdaStrategy());
         registry.strategies.add(new CdaR2Strategy());
         registry.strategies.add(new Hl7V3MessageStrategy());
         return registry;

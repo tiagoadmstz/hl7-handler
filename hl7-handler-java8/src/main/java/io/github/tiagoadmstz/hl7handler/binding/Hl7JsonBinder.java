@@ -63,6 +63,24 @@ public class Hl7JsonBinder {
     }
 
     /**
+     * Converts a Value Object, or any bean-like object, into a Map keyed by property name, so that it can be written
+     * with a YAML mapping. A Map value is returned as an equivalent Map. Returns {@code null} for a {@code null} value.
+     *
+     * @throws Hl7BindingException if the object cannot be converted
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> toMap(Object value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return jsonMapper.convertValue(value, Map.class);
+        } catch (IllegalArgumentException e) {
+            throw new Hl7BindingException("Error converting " + value.getClass().getName() + " to a map", e);
+        }
+    }
+
+    /**
      * Converts an Hl7Message to raw structural JSON representation.
      */
     public String toRawJson(Hl7Message message) {
