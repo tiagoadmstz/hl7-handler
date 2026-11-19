@@ -4,13 +4,20 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import io.github.tiagoadmstz.hl7handler.Hl7Handler;
 import io.github.tiagoadmstz.hl7handler.model.Hl7Message;
+import io.github.tiagoadmstz.hl7handler.v3.Hl7V3Document;
+import io.github.tiagoadmstz.hl7handler.v3.Hl7V3Processor;
+import io.github.tiagoadmstz.hl7handler.v3.Hl7V3Result;
+import io.github.tiagoadmstz.hl7handler.v3.writer.Hl7V3Writer;
 
 /**
- * Runs the three HL7 cases on Java 8 with the hl7-handler-java8 artifact: a lab result read as a
- * list, a 2.6 monitor message with its ACK, and a legacy 2.3 admission with PID-2 as the patient id.
+ * Runs six cases on Java 8 with the hl7-handler-java8 artifact: a lab result read as a list, a 2.6
+ * monitor message with its ACK, a legacy 2.3 admission with PID-2 as the patient id, a CDA R2 read
+ * with a YAML mapping, a PRPA written from a Map, and a v3 ACK for that PRPA.
  */
 public final class PureJava8Example {
 
@@ -39,7 +46,53 @@ public final class PureJava8Example {
         executarCasoMapeado(recurso("/samples/adt-legado-v23.hl7"), "/mappings/admissao-legado-mapping.yaml");
         executarCasoMapeado(recurso("/samples/adt-admissao-v25.hl7"), "/mappings/admissao-legado-mapping.yaml");
 
+        System.out.println("\n4. Leitura de CDA R2 com mapeamento (v3)");
+        Hl7V3Processor processadorCda = processadorCdaComMapeamento();
+        Hl7V3Result cda = processadorCda.read(recurso("/samples/v3/cda-r2-sumario-alta.xml"));
+        System.out.println("   Formato: " + cda.document().format());
+        System.out.println("   Versão: " + cda.document().versionIdentifier());
+        System.out.println("   JSON: " + cda.toJson());
+
+        System.out.println("\n5. Escrita de PRPA_IN201301UV02 a partir de um Map");
+        Map<String, Object> paciente = new LinkedHashMap<String, Object>();
+        paciente.put("id", "PAC-EXEMPLO-5");
+        paciente.put("nome", "Ana");
+        paciente.put("sobrenome", "Teste");
+        Map<String, Object> mensagemPrpa = new LinkedHashMap<String, Object>();
+        mensagemPrpa.put("mensagemId", "MSG-EXEMPLO-5");
+        mensagemPrpa.put("paciente", paciente);
+        Hl7V3Writer escritor = escritorPrpaComMapeamento();
+        String prpaXml = escritor.write(mensagemPrpa);
+        System.out.println("   XML:\n" + prpaXml);
+
+        // A amostra traz o envelope completo (sender, receiver, interactionId) que o ACK copia;
+        // o XML da seção 5 só tem o corpo do paciente.
+        System.out.println("\n6. ACK v3 da PRPA_IN201301UV02");
+        Hl7V3Document prpaRecebida = Hl7Handler.v3().build().read(recurso("/samples/v3/prpa-in201301uv02.xml")).document();
+        String ackV3 = Hl7Handler.generateV3Ack(prpaRecebida);
+        Hl7V3Document ackDocumento = Hl7Handler.v3().build().read(ackV3).document();
+        System.out.println("   Raiz: " + ackDocumento.rootName()
+                + " | typeCode: " + ackDocumento.get("hl7:acknowledgement/@typeCode"));
+
         System.out.println("\nExecução finalizada com sucesso!");
+    }
+
+    private static Hl7V3Processor processadorCdaComMapeamento() throws IOException {
+        InputStream mapping = recursoStream("/mappings/v3/cda-sumario-mapping.yaml");
+        try {
+            return Hl7Handler.v3().withMapping(mapping).build();
+        } finally {
+            mapping.close();
+        }
+    }
+
+    private static Hl7V3Writer escritorPrpaComMapeamento() throws IOException {
+        InputStream mapping = recursoStream("/mappings/v3/prpa-escrita-mapping.yaml");
+        try {
+            return Hl7Handler.v3().withMapping(mapping).buildWriter();
+        } finally {
+            mapping.close();
+        }
     }
 
     private static void executarCasoMapeado(String rawHl7, String caminhoMapeamento) throws IOException {

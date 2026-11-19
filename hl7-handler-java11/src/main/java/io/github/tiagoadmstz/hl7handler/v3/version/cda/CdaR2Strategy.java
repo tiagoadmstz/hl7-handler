@@ -25,7 +25,17 @@ public class CdaR2Strategy extends AbstractHl7V3Strategy {
      * Creates the CDA R2 strategy with its built-in semantic coordinates.
      */
     public CdaR2Strategy() {
-        super(Hl7V3Format.CDA, coordinates());
+        this(null);
+    }
+
+    /**
+     * Creates a CDA R2 strategy that adds coordinates to the built-in ones. Subclasses use it to refine a document
+     * family, such as C-CDA, without repeating the CDA coordinates.
+     *
+     * @param additionalCoordinates extra name to XPath entries, added after the built-in ones; may be {@code null}
+     */
+    protected CdaR2Strategy(Map<String, String> additionalCoordinates) {
+        super(Hl7V3Format.CDA, coordinates(additionalCoordinates));
     }
 
     @Override
@@ -48,13 +58,16 @@ public class CdaR2Strategy extends AbstractHl7V3Strategy {
         return Collections.singletonList("CDA typeId is not 2.16.840.1.113883.1.3/POCD_HD000040");
     }
 
-    private static Map<String, String> coordinates() {
+    private static Map<String, String> coordinates(Map<String, String> additionalCoordinates) {
         Map<String, String> coordinates = new LinkedHashMap<>();
         coordinates.put("documentId", "concat(hl7:id[1]/@extension, hl7:id[1][string-length(@extension) = 0]/@root)");
         coordinates.put("patientId", "hl7:recordTarget/hl7:patientRole/hl7:id[1]/@extension");
         coordinates.put("effectiveTime", "hl7:effectiveTime/@value");
         coordinates.put("documentType", "hl7:code/@code");
         coordinates.put("title", "hl7:title");
+        if (additionalCoordinates != null) {
+            coordinates.putAll(additionalCoordinates);
+        }
         return coordinates;
     }
 }

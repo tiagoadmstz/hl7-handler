@@ -79,6 +79,10 @@ public final class Hl7V3MappingValidator {
             return;
         }
         if (kind == Hl7V3DirectiveKind.CONSTANT) {
+            Object constantXpath = map.containsKey("xpath") ? map.get("xpath") : map.get("path");
+            if (constantXpath != null) {
+                validateXPath(expressionOf(constantXpath, path), path, xpath);
+            }
             validateType(map, path, converters);
             return;
         }

@@ -21,6 +21,9 @@ import io.github.tiagoadmstz.hl7handler.parser.Hl7Parser;
 import io.github.tiagoadmstz.hl7handler.parser.Hl7ParserRegistry;
 import io.github.tiagoadmstz.hl7handler.parser.Hl7VersionDetector;
 import io.github.tiagoadmstz.hl7handler.v3.Hl7V3Builder;
+import io.github.tiagoadmstz.hl7handler.v3.Hl7V3Document;
+import io.github.tiagoadmstz.hl7handler.v3.ack.Hl7V3AckCode;
+import io.github.tiagoadmstz.hl7handler.v3.ack.Hl7V3AckGenerator;
 import io.github.tiagoadmstz.hl7handler.writer.Hl7Writer;
 
 import java.io.File;
@@ -131,6 +134,24 @@ public final class Hl7Handler {
      */
     public static String generateAck(Hl7Message message, String ackCode, String textMessage) {
         return Hl7AckGenerator.generateAck(message, ackCode, textMessage);
+    }
+
+    /**
+     * Generates an application accept (AA) HL7 v3 acknowledgement for a received HL7 v3 message.
+     *
+     * @throws IllegalArgumentException if the document is {@code null} or is a CDA document
+     */
+    public static String generateV3Ack(Hl7V3Document document) {
+        return Hl7V3AckGenerator.generateAck(document);
+    }
+
+    /**
+     * Generates an HL7 v3 acknowledgement with an explicit code and an optional detail text.
+     *
+     * @throws IllegalArgumentException if the document or the code is {@code null}, or the document is a CDA document
+     */
+    public static String generateV3Ack(Hl7V3Document document, Hl7V3AckCode code, String text) {
+        return Hl7V3AckGenerator.generateAck(document, code, text);
     }
 
     /**

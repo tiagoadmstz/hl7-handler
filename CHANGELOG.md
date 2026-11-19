@@ -14,6 +14,13 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - Strategy por tipo de documento (`io.github.tiagoadmstz.hl7handler.v3.version`): `CdaR2Strategy`, `Hl7V3MessageStrategy` e `Hl7V3StrategyRegistry`, que aceita estratégias customizadas (por exemplo, por `templateId`) com prioridade sobre as embutidas
 - Mapeamento YAML v3 com XPath 1.0 e prefixos `hl7`, `sdtc` e `xsi`, mais os declarados em `namespaces:` ou em `Hl7V3Builder.namespace(...)`. Usa as mesmas diretivas do v2 (`xpath`/`path`, `fallback`, `padrao`, `tipo`, `valor`, `lista` + `item`), coordenadas semânticas `#documentId`, `#patientId` e outras, e `formato: CDA|MESSAGE`. É validado no `build()`
 - Parser XML seguro, só com `javax.xml`: `DOCTYPE`, entidades externas e `XInclude` são recusados
+- Writer v3 (`Hl7V3Builder.buildWriter()` → `Hl7V3Writer`): grava XML v3/CDA a partir de `Map` ou VO com o mesmo YAML da leitura, com `write`, `writeBytes` (UTF-8), template opcional (`template(...)`/`templateContent(...)`), raiz pela chave `raiz`/`root`, `indent(boolean)`, predicados `[@attr='valor']` e `[n]`, `lista` + `item` e datas convertidas para TS. Caminhos não graváveis falham no `buildWriter()`
+- Constante com caminho (`{ xpath: ..., valor: ... }`) no mapeamento v3: a leitura devolve a constante e o writer a grava no XPath
+- `Hl7V3Document.toXml()` para serializar de volta um documento lido
+- ACK v3 `MCCI_IN000002UV01`: `Hl7V3AckGenerator`, `Hl7V3AckCode` (`AA`, `AE`, `AR`, `CA`, `CE`, `CR`) e os atalhos `Hl7Handler.generateV3Ack(...)`
+- Validação por XSD na leitura e na escrita: `Hl7V3Builder.schema(Path|File|URL)` e `schemaValidation(STRICT|WARN)`; no modo `STRICT`, lança `Hl7V3SchemaValidationException` (subclasse de `Hl7ParseException`) com `errors()`; no `WARN`, os erros vão para `warnings()`
+- `CcdaStrategy` embutida para C-CDA (US Realm Header), com `versionIdentifier` `C-CDA-R2.1`, `C-CDA-R2.0` ou `C-CDA-R1.1`, coordenadas do paciente, autor e custodiante e avisos de LOINC, `recordTarget` e `languageCode`; o registry padrão passa a consultar C-CDA, CDA e mensagem, nessa ordem
+- `Hl7JsonBinder.toMap(Object)` para converter um VO em `Map`
 
  - 2026-11-19
 

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="urn:hl7-org:v3"
+           targetNamespace="urn:hl7-org:v3"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+
+  <xs:include schemaLocation="teste-tipos.xsd"/>
+
+  <xs:element name="ClinicalDocument">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="typeId" type="IdType"/>
+        <xs:element name="templateId" type="IdType" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element name="id" type="IdType"/>
+        <xs:element name="code" type="CodeType"/>
+        <xs:element name="title" type="xs:string"/>
+        <xs:element name="effectiveTime" type="TsType"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

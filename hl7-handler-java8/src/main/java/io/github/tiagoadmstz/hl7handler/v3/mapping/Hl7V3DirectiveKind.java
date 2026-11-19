@@ -9,9 +9,9 @@ import java.util.Set;
 /**
  * Classifies a YAML mapping node of an HL7 v3 mapping as a directive or as a nested group. A map is a directive
  * only when every one of its keys belongs to that directive's key set, so a business group such as
- * {@code {valor: ..., unidade: ...}} stays a group. The transformer and the validator share these rules.
+ * {@code {valor: ..., unidade: ...}} stays a group. The reader, the validator and the XML writer share these rules.
  */
-enum Hl7V3DirectiveKind {
+public enum Hl7V3DirectiveKind {
 
     LIST,
     CONSTANT,
@@ -19,16 +19,17 @@ enum Hl7V3DirectiveKind {
     GROUP;
 
     private static final Set<String> LIST_KEYS = keySet("lista", "list", "item");
-    private static final Set<String> CONSTANT_KEYS = keySet("valor", "value", "tipo", "type");
+    private static final Set<String> CONSTANT_KEYS = keySet("valor", "value", "tipo", "type", "xpath", "path");
     private static final Set<String> COORDINATE_KEYS = keySet("xpath", "path", "fallback", "padrao", "tipo", "type");
 
     /**
-     * Classifies a mapping node.
+     * Classifies a mapping node. A constant may also carry an {@code xpath}: the writer uses it as the place where the
+     * constant is written, while the reader always returns the constant itself.
      *
      * @param node the YAML node, a map
      * @return the directive kind, or {@link #GROUP} for a nested group
      */
-    static Hl7V3DirectiveKind classify(Map<?, ?> node) {
+    public static Hl7V3DirectiveKind classify(Map<?, ?> node) {
         if (isDirective(node, LIST_KEYS, "lista", "list")) {
             return LIST;
         }

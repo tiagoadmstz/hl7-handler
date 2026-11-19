@@ -25,7 +25,7 @@ public final class Hl7V3ToMapTransformer {
 
     private static final String MAPPINGS_KEY = "mappings";
     private static final Set<String> METADATA_KEYS = Collections.unmodifiableSet(new HashSet<>(
-            Arrays.asList("formato", "format", "namespaces", "description", "version", MAPPINGS_KEY)));
+            Arrays.asList("formato", "format", "namespaces", "description", "version", "raiz", "root", MAPPINGS_KEY)));
 
     private final boolean keepEmptyStrings;
     private final Map<String, Hl7TypeConverter> customConverters;
@@ -72,7 +72,7 @@ public final class Hl7V3ToMapTransformer {
      * Returns the template of a mapping: the {@code mappings} block when present, otherwise every top-level key
      * that is not metadata.
      */
-    static Map<String, Object> templateOf(Map<String, Object> mappingConfig) {
+    public static Map<String, Object> templateOf(Map<String, Object> mappingConfig) {
         Map<String, Object> template = new LinkedHashMap<>();
         if (mappingConfig.containsKey(MAPPINGS_KEY)) {
             Object mappings = mappingConfig.get(MAPPINGS_KEY);
@@ -98,7 +98,7 @@ public final class Hl7V3ToMapTransformer {
     /**
      * Returns the raw value of the {@code formato} key, or of {@code format} when that one is absent.
      */
-    static Object formatOf(Map<String, Object> mappingConfig) {
+    public static Object formatOf(Map<String, Object> mappingConfig) {
         if (mappingConfig.containsKey("formato")) {
             return mappingConfig.get("formato");
         }

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PRPA_IN201301UV02 xmlns="urn:hl7-org:v3" ITSVersion="XML_1.0">
+  <id root="2.16.840.1.113883.19.3" extension="MSG-0001"/>
+  <creationTime value="20261110091500-0300"/>
+  <versionCode code="V3-2008N"/>
+  <interactionId root="2.16.840.1.113883.1.6" extension="PRPA_IN201301UV02"/>
+  <processingCode code="P"/>
+  <processingModeCode code="T"/>
+  <acceptAckCode code="AL"/>
+  <receiver typeCode="RCV">
+    <device classCode="DEV" determinerCode="INSTANCE">
+      <id root="2.16.840.1.113883.19.3.2"/>
+    </device>
+  </receiver>
+  <sender typeCode="SND">
+    <device classCode="DEV" determinerCode="INSTANCE">
+      <id root="2.16.840.1.113883.19.3.1"/>
+    </device>
+  </sender>
+  <controlActProcess classCode="CACT" moodCode="EVN">
+    <subject typeCode="SUBJ">
+      <registrationEvent classCode="REG" moodCode="EVN">
+        <subject1 typeCode="SBJ">
+          <patient classCode="PAT">
+            <id root="2.16.840.1.113883.19.3.99" extension="PAC-777"/>
+            <statusCode code="active"/>
+            <patientPerson>
+              <name>
+                <given>Ana</given>
+                <family>Teste</family>
+              </name>
+              <administrativeGenderCode code="F"/>
+              <birthTime value="19920228"/>
+            </patientPerson>
+          </patient>
+        </subject1>
+      </registrationEvent>
+    </subject>
+  </controlActProcess>
+</PRPA_IN201301UV02>
