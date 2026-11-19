@@ -1,0 +1,24 @@
+{
+  "resourceType": "Patient",
+  "id": "pat-001",
+  "meta": {
+    "versionId": "1",
+    "lastUpdated": "2026-11-19T10:00:00Z"
+  },
+  "identifier": [
+    {
+      "system": "http://hospital.org/prontuario",
+      "value": "123456"
+    }
+  ],
+  "active": true,
+  "name": [
+    {
+      "use": "official",
+      "family": "Silva",
+      "given": ["Maria", "Aparecida"]
+    }
+  ],
+  "gender": "female",
+  "birthDate": "1980-05-15"
+}

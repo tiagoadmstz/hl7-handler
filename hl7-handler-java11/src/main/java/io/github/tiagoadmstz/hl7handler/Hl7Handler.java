@@ -6,6 +6,7 @@ import io.github.tiagoadmstz.hl7handler.api.DefaultHl7Reader;
 import io.github.tiagoadmstz.hl7handler.api.Hl7Processor;
 import io.github.tiagoadmstz.hl7handler.api.Hl7Reader;
 import io.github.tiagoadmstz.hl7handler.binding.Hl7JsonBinder;
+import io.github.tiagoadmstz.hl7handler.fhir.FhirBuilder;
 import io.github.tiagoadmstz.hl7handler.mapping.Hl7MappingException;
 import io.github.tiagoadmstz.hl7handler.mapping.Hl7MappingValidator;
 import io.github.tiagoadmstz.hl7handler.mapping.Hl7ToMapTransformer;
@@ -86,6 +87,13 @@ public final class Hl7Handler {
      */
     public static Hl7V3Builder v3() {
         return new Hl7V3Builder();
+    }
+
+    /**
+     * Creates a new Builder for an HL7 FHIR processor, which reads, maps and builds FHIR R4 and R5 resources.
+     */
+    public static FhirBuilder fhir() {
+        return new FhirBuilder();
     }
 
     /**

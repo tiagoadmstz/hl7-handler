@@ -1,0 +1,79 @@
+{
+  "resourceType": "Bundle",
+  "id": "bundle-001",
+  "type": "transaction",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:6549a1d2-0001-4000-8000-000000000001",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "pat-001",
+        "identifier": [
+          {
+            "system": "http://hospital.org/prontuario",
+            "value": "123456"
+          }
+        ],
+        "name": [
+          {
+            "family": "Silva",
+            "given": ["Maria"]
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "Patient"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:6549a1d2-0001-4000-8000-000000000002",
+      "resource": {
+        "resourceType": "Device",
+        "id": "dev-001",
+        "identifier": [
+          {
+            "value": "00-A0-C9-14-C8-29-00-00"
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "Device"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:6549a1d2-0001-4000-8000-000000000003",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "obs-001",
+        "status": "final",
+        "code": {
+          "coding": [
+            {
+              "system": "urn:iso:std:iso:11073:10101",
+              "code": "150020"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "urn:uuid:6549a1d2-0001-4000-8000-000000000001"
+        },
+        "device": {
+          "reference": {
+            "reference": "urn:uuid:6549a1d2-0001-4000-8000-000000000002"
+          }
+        },
+        "valueQuantity": {
+          "value": 98.0,
+          "unit": "%",
+          "code": "%"
+        }
+      },
+      "request": {
+        "method": "POST",
+        "url": "Observation"
+      }
+    }
+  ]
+}
