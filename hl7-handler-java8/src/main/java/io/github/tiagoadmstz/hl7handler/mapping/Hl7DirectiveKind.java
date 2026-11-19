@@ -21,7 +21,8 @@ enum Hl7DirectiveKind {
 
     private static final Set<String> LIST_KEYS = keySet("lista", "list", "item");
     private static final Set<String> CONSTANT_KEYS = keySet("valor", "value", "tipo", "type");
-    private static final Set<String> COORDINATE_KEYS = keySet("hl7", "path", "campo", "fallback", "padrao", "tipo", "type");
+    private static final Set<String> COORDINATE_KEYS = keySet("hl7", "path", "campo", "fallback", "padrao", "tipo", "type",
+            "tipoPor", "typeBy", "tipos", "types", "unidadePor", "unitBy", "ajustarUnidade", "adjustUnit");
 
     static Hl7DirectiveKind classify(Map<?, ?> node) {
         if (isDirective(node, LIST_KEYS, "lista", "list")) {

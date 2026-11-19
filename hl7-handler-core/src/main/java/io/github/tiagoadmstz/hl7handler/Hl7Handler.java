@@ -7,6 +7,7 @@ import io.github.tiagoadmstz.hl7handler.binding.Hl7JsonBinder;
 import io.github.tiagoadmstz.hl7handler.mapping.Hl7MappingException;
 import io.github.tiagoadmstz.hl7handler.mapping.Hl7MappingValidator;
 import io.github.tiagoadmstz.hl7handler.mapping.Hl7ToMapTransformer;
+import io.github.tiagoadmstz.hl7handler.mapping.Hl7TemperatureUnit;
 import io.github.tiagoadmstz.hl7handler.mapping.Hl7TypeConverter;
 import io.github.tiagoadmstz.hl7handler.mapping.YamlMappingLoader;
 import io.github.tiagoadmstz.hl7handler.model.Hl7Delimiters;
@@ -167,6 +168,7 @@ public final class Hl7Handler {
         private InputStream mappingStream;
         private String mappingContent;
         private boolean keepEmptyStrings;
+        private Hl7TemperatureUnit temperatureUnit;
         private final Map<String, Hl7TypeConverter> converters = new LinkedHashMap<>();
 
         public Builder() {}
@@ -176,6 +178,16 @@ public final class Hl7Handler {
          */
         public Builder keepEmptyStrings(boolean keepEmptyStrings) {
             this.keepEmptyStrings = keepEmptyStrings;
+            return this;
+        }
+
+        /**
+         * Converts the numeric values of {@code unidadePor} coordinates to this temperature unit. Overrides the
+         * {@code temperatura} metadata of the YAML mapping; {@code null} leaves the choice to the mapping, which
+         * disables the conversion when it has none.
+         */
+        public Builder temperatureUnit(Hl7TemperatureUnit temperatureUnit) {
+            this.temperatureUnit = temperatureUnit;
             return this;
         }
 
@@ -276,7 +288,7 @@ public final class Hl7Handler {
         }
 
         private Hl7ToMapTransformer newTransformer() {
-            return new Hl7ToMapTransformer(keepEmptyStrings, converters);
+            return new Hl7ToMapTransformer(keepEmptyStrings, converters, temperatureUnit);
         }
 
         private Hl7ParserRegistry effectiveRegistry() {

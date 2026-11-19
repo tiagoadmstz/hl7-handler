@@ -134,4 +134,47 @@ class MonitorSpotCheckSampleTest {
             .isInstanceOf(Hl7MappingException.class)
             .hasMessageContaining("60001^FICT_POS_SITTING^99FICT");
     }
+
+    @Test
+    @DisplayName("Deve mapear os 38 OBX pelo tipo do OBX-2 sem erro, com número no NM e texto no CNE e no ST")
+    void shouldMapAllObxByTypeCoordinateWithoutError() {
+        String mapping = "mappings:\n"
+            + "  sinais:\n"
+            + "    lista: \"OBX[*]\"\n"
+            + "    item:\n"
+            + "      nome: \"3.2\"\n"
+            + "      valor: { hl7: \"5\", tipoPor: \"2\" }\n";
+        Hl7Processor byType = Hl7Handler.builder().withMappingContent(mapping).build();
+
+        List<?> sinais = (List<?>) byType.read(TestResources.read(SAMPLE)).toMap().get("sinais");
+
+        assertThat(sinais).hasSize(38);
+        assertThat(((Map<?, ?>) sinais.get(0)).get("valor")).isEqualTo(119L);
+        assertThat(((Map<?, ?>) sinais.get(4)).get("valor")).isEqualTo("60001^FICT_POS_SITTING^99FICT");
+        assertThat(((Map<?, ?>) sinais.get(5)).get("valor")).isEqualTo(37.2);
+        assertThat(((Map<?, ?>) sinais.get(32)).get("valor")).isEqualTo("NEWS2");
+    }
+
+    @Test
+    @DisplayName("Deve converter a temperatura de 37.2 °C do OBX 6 para 99.0 °F e trocar a unidade por MDC_DIM_FAHR")
+    void shouldConvertSampleTemperatureToFahrenheitAndAdjustUnit() {
+        String mapping = "temperatura: fahrenheit\n"
+            + "mappings:\n"
+            + "  sinais:\n"
+            + "    lista: \"OBX[*]\"\n"
+            + "    item:\n"
+            + "      nome: \"3.2\"\n"
+            + "      valor: { hl7: \"5\", tipoPor: \"2\", unidadePor: \"6\" }\n"
+            + "      unidade: { hl7: \"6.2\", ajustarUnidade: true }\n";
+        Hl7Processor fahrenheit = Hl7Handler.builder().withMappingContent(mapping).build();
+
+        List<?> sinais = (List<?>) fahrenheit.read(TestResources.read(SAMPLE)).toMap().get("sinais");
+        Map<?, ?> temperatura = (Map<?, ?>) sinais.get(5);
+
+        assertThat(temperatura.get("nome")).isEqualTo("MDC_TEMP_EAR");
+        assertThat(temperatura.get("valor")).isEqualTo(99.0);
+        assertThat(temperatura.get("unidade")).isEqualTo("MDC_DIM_FAHR");
+        assertThat(((Map<?, ?>) sinais.get(0)).get("valor")).isEqualTo(119L);
+        assertThat(((Map<?, ?>) sinais.get(0)).get("unidade")).isEqualTo("MDC_DIM_MMHG");
+    }
 }

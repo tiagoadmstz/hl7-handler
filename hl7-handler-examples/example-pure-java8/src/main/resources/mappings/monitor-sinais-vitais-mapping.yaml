@@ -1,5 +1,6 @@
 version: "2.6"
 description: "Sinais vitais de monitor multiparamétrico (ORU_R01 2.6)"
+temperatura: celsius
 mappings:
   idMensagem: "MSH.10"
   dispositivo: "MSH.3.2"
@@ -12,10 +13,14 @@ mappings:
     item:
       codigo: "3.1"
       nome: "3.2"
+      tipoValor: "2"
       valor:
         hl7: "5"
-        tipo: numero
-      unidade: "6"
+        tipoPor: "2"
+        unidadePor: "6"
+      unidade:
+        hl7: "6"
+        ajustarUnidade: true
       referencia: "7"
       medidoEm:
         hl7: "14"
