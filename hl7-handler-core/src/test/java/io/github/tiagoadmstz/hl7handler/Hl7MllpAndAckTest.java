@@ -161,13 +161,13 @@ class Hl7MllpAndAckTest {
 
     @Test
     @DisplayName("Gera ACK ciente da versão 2.6 com precisão DTM e eco de MSH-18")
-    void shouldGenerateAckForVersion26Mindray() {
-        String hl7 = "MSH|^~\\&|MINDRAY_EGATEWAY|MINDRAY|HOSP|CENTRAL|20261110120000.0000-0300||ORU^R01^ORU_R01|V26-001|P|2.6||||||UNICODE UTF-8\r";
+    void shouldGenerateAckForVersion26MultiparameterMonitor() {
+        String hl7 = "MSH|^~\\&|GATEWAY_FICT|FABRICANTE_FICT|HOSP|CENTRAL|20261110120000.0000-0300||ORU^R01^ORU_R01|V26-001|P|2.6||||||UNICODE UTF-8\r";
         Hl7Message msg = Hl7Handler.reader().from(hl7).toMessage();
 
         String ack = Hl7AckGenerator.generateAck(msg);
 
-        assertThat(ack).contains("MSH|^~\\&|HOSP|CENTRAL|MINDRAY_EGATEWAY|MINDRAY|");
+        assertThat(ack).contains("MSH|^~\\&|HOSP|CENTRAL|GATEWAY_FICT|FABRICANTE_FICT|");
         assertThat(ack).contains("|ACK^R01^ACK|ACK-V26-001|P|2.6||||||UNICODE UTF-8\r");
         assertThat(ack).contains("MSA|AA|V26-001|Message accepted\r");
     }

@@ -8,6 +8,8 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [Não Lançado]
 
 ### Adicionado
+- Mapeamento v2: `tipoPor` (`typeBy`) converte o valor pelo campo de tipo do item, como o OBX-2. A tabela padrão converte `NM` em número e `DT`/`DTM`/`TS` em data, e deixa os demais tipos como texto. `tipos` (`types`) muda ou amplia a tabela. Um OBX `CNE` ou `ST` deixa de derrubar o `toMap()` quando o mapeamento usa `tipoPor`
+- Conversão de temperatura entre Celsius e Fahrenheit: `Hl7TemperatureUnit`, `Hl7Handler.builder().temperatureUnit(...)` e o metadado `temperatura`/`temperature` no YAML (o builder vence). O valor com `unidadePor` (`unitBy`) é convertido quando a unidade (MDC, UCUM ou símbolo) é de temperatura, e `ajustarUnidade` (`adjustUnit`) troca o nome da unidade. Desligada por padrão
 - Leitor de HL7 v3 e CDA R2, separado do leitor v2: `Hl7Handler.v3()` devolve um `Hl7V3Builder`, que gera um `Hl7V3Processor` imutável e thread-safe, com `read(String)`, `read(InputStream)` (encoding lido da declaração XML) e `readBytes(byte[])`
 - `Hl7V3Result` com `document()`, `toMap()` (calculado uma vez, em cache e não modificável), `toJson()`, `toRawJson()` (atributos como `@nome`, texto como `#text`) e `bindTo(Class)`
 - `Hl7V3Document` com `format()` (`CDA` ou `MESSAGE`), `versionIdentifier()`, `rootName()`, `templateIds()`, `get(xpath)` (`""` quando ausente), `getAll(xpath)` e `warnings()`

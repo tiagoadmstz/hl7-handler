@@ -451,7 +451,7 @@ O parser separa linhas, segmentos, repetições, componentes e subcomponentes po
 | Benchmark | Baseline (regex split) | Após (varredura) | Ganho |
 |---|---|---|---|
 | `parseAdtV25` | 24,70 µs ± 1,34 | 9,49 µs ± 3,03 | 61,6% |
-| `parseMindrayOruV26` | 34,44 µs ± 0,97 | 9,45 µs ± 3,70 | 72,5% |
+| `parseMonitorOruV26` | 34,44 µs ± 0,97 | 9,45 µs ± 3,70 | 72,5% |
 | `parseOruWith200Obx` | 1.275,92 µs ± 674,02 | 340,14 µs ± 47,02 | 73,3% |
 | `mapPaciente` | 35,06 µs ± 35,80 | 16,25 µs ± 14,34 | 53,7% |
 
@@ -522,9 +522,43 @@ porVersao:
 - Um mapa só é lido como diretiva quando **todas** as suas chaves são da diretiva. Um grupo com outras chaves, como `exame: { valor: "OBX.5", unidade: "OBX.6" }`, continua sendo um grupo comum.
 - Tipos embutidos: `texto`, `numero`, `data`, `booleano` (e os nomes em inglês).
 
+##### Tipo pelo OBX-2 e temperatura
+
+Um OBX pode trazer valor numérico (`NM`), codificado (`CNE`, `CWE`) ou texto (`ST`). Com `tipo: numero` fixo, um único valor que não é número derruba o `toMap()`. O `tipoPor` escolhe a conversão pelo campo de tipo do próprio item:
+
+```yaml
+temperatura: celsius                  # opcional: converte °F em °C (ou fahrenheit para o contrário)
+mappings:
+  sinais:
+    lista: "OBX[*]"
+    item:
+      codigo: "3.1"
+      tipoValor: "2"
+      valor: { hl7: "5", tipoPor: "2", unidadePor: "6" }
+      unidade: { hl7: "6.2", ajustarUnidade: true }
+```
+
+- **`tipoPor` (`typeBy`):** coordenada do tipo do valor, relativa ao item. No OBX é o OBX-2; o OBX-1 é só a sequência.
+  - Tabela padrão: `NM` vira `numero`; `DT`, `DTM` e `TS` viram `data`; os demais tipos, como `CNE`, `CWE`, `ST` e `SN`, ficam como texto.
+  - Um `NM` que não é número continua lançando `Hl7MappingException`.
+- **`tipos` (`types`):** muda ou amplia a tabela, por exemplo `tipos: { SN: texto, CWE: maiusculo }`. Aceita os conversores embutidos e os registrados em `converter(...)`. Exige `tipoPor` e não pode ser usado junto com `tipo`.
+- **Temperatura:**
+  - **Como ligar:** `temperatura` (`temperature`) no topo do YAML ou `Hl7Handler.builder().temperatureUnit(Hl7TemperatureUnit.CELSIUS)`. Se os dois existirem, vale o builder. Sem nenhum dos dois, nada é convertido.
+  - **Valor:** um valor numérico com `unidadePor` (`unitBy`) é convertido quando a unidade lida é de temperatura e diferente da escolhida.
+  - **Arredondamento:** HALF_UP, com as casas decimais do valor original e no mínimo uma (99.0 °F vira 37.2 °C).
+  - **Unidade:** `ajustarUnidade: true` (`adjustUnit`) troca o nome da unidade pelo da unidade escolhida, na mesma notação.
+
+  | Unidade | Código MDC | Nome MDC | UCUM | Símbolo |
+  |---|---|---|---|---|
+  | Celsius | `268192` | `MDC_DIM_DEGC` | `Cel` | `°C` |
+  | Fahrenheit | `266560` | `MDC_DIM_FAHR` | `[degF]` | `°F` |
+
+  Outras unidades e valores que não são número ficam como estão.
+
 ##### Metadados e faixas de versão
 
 - `version` e `description`: metadados informativos, ignorados na transformação.
+- `temperatura` (ou `temperature`): unidade de temperatura (`celsius` ou `fahrenheit`) usada pela conversão descrita acima. Um valor inválido falha no carregamento. Um mapa ou uma coordenada HL7 com esse nome continua sendo campo do template.
 - `mappings`: envoltório opcional do template. Se existir como mapa, só ele é transformado; sem ele, todas as chaves que não são metadados formam o template.
 - `versoes` (ou `versions`): faixas de versão aceitas pelo arquivo. Se a versão da mensagem não satisfizer a faixa, `toMap` e `bindTo` lançam `Hl7MappingException`. É o único ponto em que a versão bloqueia a leitura, inclusive para versão desconhecida.
 - `porVersao` (ou `byVersion`): sobreposições por faixa. Cada chave é uma faixa e o valor é um trecho do mapeamento, mesclado no template base. Se mais de uma faixa casar, a mais específica é aplicada por último e vence: versão exata, depois intervalo fechado (`>=2.3, <2.7`), depois faixa aberta (`>=2.3`), depois curinga (`2.x`, `*`).
@@ -569,6 +603,7 @@ Todo `withMapping(...)` valida o YAML e lança `Hl7MappingException` com o camin
 Hl7Processor processor = Hl7Handler.builder()
     .keepEmptyStrings(true)
     .converter("maiusculo", valor -> valor == null ? null : valor.toUpperCase())
+    .temperatureUnit(Hl7TemperatureUnit.CELSIUS)   // opcional; vence o `temperatura` do YAML
     .withMapping(new File("caminho/para/meu-mapeamento.yaml"))
     .build();
 

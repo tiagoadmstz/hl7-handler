@@ -31,6 +31,7 @@ public class Hl7ToMapTransformer {
 
     private final boolean keepEmptyStrings;
     private final Map<String, Hl7TypeConverter> customConverters;
+    private final Hl7TemperatureUnit temperatureUnit;
 
     public Hl7ToMapTransformer() {
         this(false);
@@ -41,8 +42,20 @@ public class Hl7ToMapTransformer {
     }
 
     public Hl7ToMapTransformer(boolean keepEmptyStrings, Map<String, Hl7TypeConverter> customConverters) {
+        this(keepEmptyStrings, customConverters, null);
+    }
+
+    /**
+     * Creates a transformer whose temperature unit overrides the {@code temperatura} metadata of the mapping.
+     *
+     * @param keepEmptyStrings whether empty HL7 values are mapped as empty strings instead of null
+     * @param customConverters custom converters by name, may be {@code null}
+     * @param temperatureUnit unit that wins over the mapping metadata; {@code null} defers to the mapping
+     */
+    public Hl7ToMapTransformer(boolean keepEmptyStrings, Map<String, Hl7TypeConverter> customConverters, Hl7TemperatureUnit temperatureUnit) {
         this.keepEmptyStrings = keepEmptyStrings;
         this.customConverters = new ConcurrentHashMap<>(customConverters != null ? customConverters : Collections.emptyMap());
+        this.temperatureUnit = temperatureUnit;
     }
 
     public boolean isKeepEmptyStrings() {
@@ -89,7 +102,8 @@ public class Hl7ToMapTransformer {
         applyVersionOverlays(message.getVersion(), mappingConfig, baseTemplate);
 
         // 4. Transform template against HL7 message
-        return processTemplateMap(message, null, 0, 0, baseTemplate);
+        Hl7TemperatureUnit unit = temperatureUnit != null ? temperatureUnit : temperatureUnitOf(mappingConfig);
+        return processTemplateMap(message, null, 0, 0, baseTemplate, unit);
     }
 
     static Object versionConstraintOf(Map<String, Object> mappingConfig) {
@@ -114,6 +128,15 @@ public class Hl7ToMapTransformer {
         }
     }
 
+    static Hl7TemperatureUnit temperatureUnitOf(Map<String, Object> mappingConfig) {
+        for (Map.Entry<String, Object> entry : mappingConfig.entrySet()) {
+            if (isTemperatureSetting(entry.getKey(), entry.getValue())) {
+                return Hl7TemperatureUnit.fromName(String.valueOf(entry.getValue()));
+            }
+        }
+        return null;
+    }
+
     private Map<String, Object> extractBaseTemplate(Map<String, Object> mappingConfig) {
         return deepCopyMap(rawBaseTemplate(mappingConfig));
     }
@@ -127,7 +150,7 @@ public class Hl7ToMapTransformer {
 
         Map<String, Object> baseTemplate = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : mappingConfig.entrySet()) {
-            if (!isTopLevelMetadata(entry.getKey())) {
+            if (!isTopLevelMetadata(entry.getKey()) && !isTemperatureSetting(entry.getKey(), entry.getValue())) {
                 baseTemplate.put(entry.getKey(), entry.getValue());
             }
         }
@@ -146,6 +169,25 @@ public class Hl7ToMapTransformer {
                 || clean.equals("porversao")
                 || clean.equals("byversion")
                 || clean.equals("mappings");
+    }
+
+    /**
+     * A {@code temperatura}/{@code temperature} key is the temperature setting unless its value is a map, a list or an
+     * HL7 coordinate, so that a legacy top-level field with that name keeps mapping.
+     */
+    static boolean isTemperatureSetting(String key, Object value) {
+        if (key == null) {
+            return false;
+        }
+        String clean = key.trim().toLowerCase(Locale.ROOT);
+        if (!clean.equals("temperatura") && !clean.equals("temperature")) {
+            return false;
+        }
+        if (value instanceof Map<?, ?> || value instanceof List<?>) {
+            return false;
+        }
+        String text = String.valueOf(value).trim();
+        return Hl7TemperatureUnit.fromName(text) != null || !HL7_COORDINATE_PATTERN.matcher(text).matches();
     }
 
     private static final class VersionOverlayRule {
@@ -242,14 +284,14 @@ public class Hl7ToMapTransformer {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> processTemplateMap(Hl7Message message, Hl7Segment contextSeg, int repField, int repNum, Map<String, Object> template) {
+    private Map<String, Object> processTemplateMap(Hl7Message message, Hl7Segment contextSeg, int repField, int repNum, Map<String, Object> template, Hl7TemperatureUnit unit) {
         Map<String, Object> result = new LinkedHashMap<>();
 
         for (Map.Entry<String, Object> entry : template.entrySet()) {
             String key = entry.getKey();
             Object val = entry.getValue();
 
-            Object evaluated = evaluateNode(message, contextSeg, repField, repNum, val);
+            Object evaluated = evaluateNode(message, contextSeg, repField, repNum, val, unit);
             result.put(key, evaluated);
         }
 
@@ -257,7 +299,7 @@ public class Hl7ToMapTransformer {
     }
 
     @SuppressWarnings("unchecked")
-    private Object evaluateNode(Hl7Message message, Hl7Segment contextSeg, int repField, int repNum, Object node) {
+    private Object evaluateNode(Hl7Message message, Hl7Segment contextSeg, int repField, int repNum, Object node, Hl7TemperatureUnit unit) {
         if (node instanceof Map<?, ?>) {
             Map<String, Object> mapNode = (Map<String, Object>) node;
             Hl7DirectiveKind kind = Hl7DirectiveKind.classify(mapNode);
@@ -267,7 +309,7 @@ public class Hl7ToMapTransformer {
                 Object listSpecObj = mapNode.containsKey("lista") ? mapNode.get("lista") : mapNode.get("list");
                 String listSpec = String.valueOf(listSpecObj);
                 Object itemTemplate = mapNode.get("item");
-                return processList(message, contextSeg, listSpec, itemTemplate);
+                return processList(message, contextSeg, listSpec, itemTemplate, unit);
             }
 
             // 2. Constant value directive (valor / value)
@@ -298,22 +340,29 @@ public class Hl7ToMapTransformer {
                     raw = resolveFallback(message, contextSeg, repField, repNum, fallbackObj);
                 }
 
-                if (mapNode.containsKey("tipo") || mapNode.containsKey("type")) {
-                    String typeName = String.valueOf(mapNode.containsKey("tipo") ? mapNode.get("tipo") : mapNode.get("type"));
-                    return applyTypeConversion(typeName, raw);
+                if (unit != null && Boolean.TRUE.equals(directiveValue(mapNode, "ajustarUnidade", "adjustUnit"))) {
+                    raw = Hl7TemperatureConversion.adjustUnit(raw, componentSeparator(message), unit);
                 }
 
-                if (raw == null || raw.isEmpty()) {
-                    if (keepEmptyStrings) {
-                        return "";
-                    }
-                    return null;
+                Object value;
+                if (mapNode.containsKey("tipo") || mapNode.containsKey("type")) {
+                    String typeName = String.valueOf(mapNode.containsKey("tipo") ? mapNode.get("tipo") : mapNode.get("type"));
+                    value = applyTypeConversion(typeName, raw);
+                } else if (hasDirective(mapNode, "tipoPor", "typeBy")) {
+                    value = applyTypeByCoordinate(message, contextSeg, repField, repNum, mapNode, raw);
+                } else {
+                    value = plainValue(raw);
                 }
-                return raw;
+
+                if (value instanceof Number && unit != null && hasDirective(mapNode, "unidadePor", "unitBy")) {
+                    String unitPath = String.valueOf(directiveValue(mapNode, "unidadePor", "unitBy"));
+                    value = convertTemperature(message, contextSeg, repField, repNum, unitPath, raw, value, unit);
+                }
+                return value;
             }
 
             // 4. Nested standard Map
-            return processTemplateMap(message, contextSeg, repField, repNum, mapNode);
+            return processTemplateMap(message, contextSeg, repField, repNum, mapNode, unit);
         }
 
         if (node instanceof String) {
@@ -332,7 +381,7 @@ public class Hl7ToMapTransformer {
     }
 
     @SuppressWarnings("unchecked")
-    private Object processList(Hl7Message message, Hl7Segment contextSeg, String listSpec, Object itemTemplate) {
+    private Object processList(Hl7Message message, Hl7Segment contextSeg, String listSpec, Object itemTemplate, Hl7TemperatureUnit unit) {
         if (listSpec == null || listSpec.trim().isEmpty()) {
             return new ArrayList<>();
         }
@@ -349,9 +398,9 @@ public class Hl7ToMapTransformer {
 
             for (Hl7Segment seg : segments) {
                 if (itemTemplate instanceof Map<?, ?>) {
-                    resultList.add(processTemplateMap(message, seg, 0, 0, (Map<String, Object>) itemTemplate));
+                    resultList.add(processTemplateMap(message, seg, 0, 0, (Map<String, Object>) itemTemplate, unit));
                 } else if (itemTemplate != null) {
-                    resultList.add(evaluateNode(message, seg, 0, 0, itemTemplate));
+                    resultList.add(evaluateNode(message, seg, 0, 0, itemTemplate, unit));
                 }
             }
             return resultList;
@@ -381,9 +430,9 @@ public class Hl7ToMapTransformer {
 
             for (int r = 1; r <= repetitions.size(); r++) {
                 if (itemTemplate instanceof Map<?, ?>) {
-                    resultList.add(processTemplateMap(message, seg, fieldIndex, r, (Map<String, Object>) itemTemplate));
+                    resultList.add(processTemplateMap(message, seg, fieldIndex, r, (Map<String, Object>) itemTemplate, unit));
                 } else if (itemTemplate != null) {
-                    resultList.add(evaluateNode(message, seg, fieldIndex, r, itemTemplate));
+                    resultList.add(evaluateNode(message, seg, fieldIndex, r, itemTemplate, unit));
                 }
             }
             return resultList;
@@ -504,6 +553,73 @@ public class Hl7ToMapTransformer {
             return "";
         }
         return fallbackStr;
+    }
+
+    private Object plainValue(String raw) {
+        if (raw == null || raw.isEmpty()) {
+            return keepEmptyStrings ? "" : null;
+        }
+        return raw;
+    }
+
+    private Object applyTypeByCoordinate(Hl7Message message, Hl7Segment contextSeg, int repField, int repNum, Map<?, ?> node, String raw) {
+        String typeCode = resolveHl7Path(message, contextSeg, repField, repNum, String.valueOf(directiveValue(node, "tipoPor", "typeBy")));
+        String converterName = converterForTypeCode(typeCode, directiveValue(node, "tipos", "types"));
+        if (Hl7TypeConverter.TEXTO.equals(converterName)) {
+            return plainValue(raw);
+        }
+        return applyTypeConversion(converterName, raw);
+    }
+
+    private static String converterForTypeCode(String typeCode, Object overrides) {
+        String code = typeCode == null ? "" : typeCode.trim().toUpperCase(Locale.ROOT);
+        if (overrides instanceof Map<?, ?>) {
+            for (Map.Entry<?, ?> entry : ((Map<?, ?>) overrides).entrySet()) {
+                if (String.valueOf(entry.getKey()).trim().toUpperCase(Locale.ROOT).equals(code)) {
+                    return String.valueOf(entry.getValue()).trim().toLowerCase(Locale.ROOT);
+                }
+            }
+        }
+        if ("NM".equals(code)) {
+            return Hl7TypeConverter.NUMERO;
+        }
+        if ("DT".equals(code) || "DTM".equals(code) || "TS".equals(code)) {
+            return Hl7TypeConverter.DATA;
+        }
+        return Hl7TypeConverter.TEXTO;
+    }
+
+    private Object convertTemperature(Hl7Message message, Hl7Segment contextSeg, int repField, int repNum,
+                                      String unitPath, String raw, Object value, Hl7TemperatureUnit target) {
+        String unitField = resolveHl7Path(message, contextSeg, repField, repNum, unitPath);
+        Hl7TemperatureUnit source = Hl7TemperatureConversion.unitOf(unitField, componentSeparator(message));
+        if (source == null || source == target) {
+            return value;
+        }
+        Double converted = Hl7TemperatureConversion.convert(raw, source, target);
+        return converted != null ? converted : value;
+    }
+
+    private static char componentSeparator(Hl7Message message) {
+        return message.getDelimiters().componentSeparator();
+    }
+
+    private static boolean hasDirective(Map<?, ?> node, String... keys) {
+        for (String key : keys) {
+            if (node.containsKey(key)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static Object directiveValue(Map<?, ?> node, String... keys) {
+        for (String key : keys) {
+            if (node.containsKey(key)) {
+                return node.get(key);
+            }
+        }
+        return null;
     }
 
     private Object applyTypeConversion(String typeName, String raw) {

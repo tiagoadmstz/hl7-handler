@@ -91,17 +91,17 @@ class Hl7VersionCompatibilityTest {
     }
 
     @Test
-    @DisplayName("2.6 Mindray: detecta a versão e lê EUI-64, charset, perfil IHE e os OBX")
-    void shouldReadVersion26MindrayObservation() {
-        Hl7Message message = parse("v26-mindray-oru.hl7");
+    @DisplayName("2.6 monitor multiparamétrico: detecta a versão e lê EUI-64, charset, perfil IHE e os OBX")
+    void shouldReadVersion26MonitorObservation() {
+        Hl7Message message = parse("v26-monitor-oru.hl7");
 
         assertThat(message.getVersion()).isEqualTo(Hl7Version.V2_6);
-        assertThat(message.get("MSH.3.2")).isEqualTo("00A0370027E84537");
+        assertThat(message.get("MSH.3.2")).isEqualTo("0000000000000003");
         assertThat(message.get("MSH.18")).isEqualTo("UNICODE UTF-8");
         assertThat(message.get("MSH.21.1")).isEqualTo("IHE_PCD_001");
         assertThat(message.get("OBX.3.2")).isEqualTo("MDC_PULS_OXIM_SAT_O2");
         assertThat(message.get("OBX.5")).isEqualTo("97");
-        assertThat(message.get("OBX.18.1")).isEqualTo("00A0370027E84537");
+        assertThat(message.get("OBX.18.1")).isEqualTo("0000000000000003");
         assertThat(message.get("OBX[2].5")).isEqualTo("72");
     }
 
@@ -200,7 +200,7 @@ class Hl7VersionCompatibilityTest {
     @DisplayName("O mesmo mapeamento YAML funciona na 2.6")
     void shouldApplySameMappingToVersion26() {
         String json = Hl7Handler.reader()
-                .from(sample("v26-mindray-oru.hl7"))
+                .from(sample("v26-monitor-oru.hl7"))
                 .withMapping(mapping())
                 .toJson();
 

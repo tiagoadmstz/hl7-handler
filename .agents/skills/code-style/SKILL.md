@@ -70,7 +70,7 @@ Cada módulo tem código próprio. A mudança é escrita no `hl7-handler-core` e
 ## Testes
 
 - JUnit 5 + AssertJ. **Um método por caso**; sem `@ParameterizedTest`.
-- Nome do método em inglês (`shouldReadVersion26MindrayObservation`); `@DisplayName` em português, descrevendo o comportamento.
+- Nome do método em inglês (`shouldReadVersion26MonitorObservation`); `@DisplayName` em português, descrevendo o comportamento.
 - Cada módulo tem a mesma classe de teste com os mesmos casos. Teste novo entra nos três.
 - **Amostras com dados fictícios** em `src/test/resources/samples/` (nunca nome, CNS, CPF ou prontuário real). Uma amostra por versão HL7 em `samples/versions/`.
 - Bug corrigido = teste que reproduz o bug, nos três módulos.
