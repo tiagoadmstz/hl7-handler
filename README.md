@@ -27,7 +27,9 @@ O número **7** faz alusão direta à **7ª camada do Modelo OSI (a Camada de Ap
    - Extensibilidade total para adicionar novas versões sem alterar as existentes (Open/Closed Principle).
 6. **HL7 v3, CDA R2 e C-CDA (`Hl7Handler.v3()`)**:
    - Lê e escreve mensagens v3 e documentos CDA em XML com o mesmo mapeamento YAML por XPath, gera o ACK v3 (`MCCI_IN000002UV01`) e valida contra XSD, só com `javax.xml` e parser seguro.
-7. **Módulo de Exemplos Isolado**:
+7. **HL7 FHIR R4 e R5 (`Hl7Handler.fhir()`)**:
+   - Lê, mapeia e constrói recursos e Bundles FHIR em JSON sem HAPI FHIR (apenas Jackson e JDK), com conversão de unidades MDC para UCUM e conversão direta de HL7 v2 para FHIR Bundle.
+8. **Módulo de Exemplos Isolado**:
    - Exemplos em **Java Puro**, **Spring Boot** e **Quarkus** mantidos em módulo desacoplado do ciclo de build da biblioteca core.
 
 ---
@@ -266,6 +268,65 @@ Hl7V3Processor processor = Hl7Handler.v3()
 - **Carga do XSD:** o XSD é compilado uma vez no `build()`/`buildWriter()`. O `include`/`import` relativo funciona a partir do disco ou do classpath (`file` e `jar`), sem acesso à rede. O `xsi:schemaLocation` do documento é ignorado.
 - **Writer:** com XSD configurado, o `Hl7V3Writer` valida o XML gerado antes de devolvê-lo.
 - **XSDs oficiais:** a biblioteca não traz os XSDs da HL7, que têm licença própria. Baixe-os no site da HL7 e aponte o `schema(...)` para eles.
+
+---
+
+## 🔥 HL7 FHIR (R4 e R5)
+
+O suporte a FHIR é obtido através de `Hl7Handler.fhir()`, **sem dependências externas pesadas** (sem HAPI FHIR, utilizando apenas Jackson e a JDK nos três módulos da biblioteca):
+
+```java
+// Leitura e consulta direta em recurso FHIR
+FhirProcessor fhir = Hl7Handler.fhir().build();
+FhirResource resource = fhir.read(json).resource();
+
+resource.resourceType();                      // "Observation"
+resource.id();                                // "obs-001"
+resource.version();                           // FhirVersion.R4 ou FhirVersion.R5
+resource.get("code.coding[0].code");          // "150020"
+resource.get("valueQuantity.value");          // "98.0"
+List<String> types = resource.getAll("entry[*].resource.resourceType");
+```
+
+### Mapeamento YAML para Recursos
+
+```yaml
+familia: fhir
+recurso: Observation
+mappings:
+  id: "id"
+  status: "status"
+  sinalVital: { de: "code.coding[0].display", fallback: "code.text" }
+  valor: { de: "valueQuantity.value", tipo: numero }
+  unidade: { de: "valueQuantity.unit", padrao: "N/A" }
+  origem: { valor: "MONITOR" }
+porVersao:
+  R5:
+    dispositivo: "device.reference.reference"
+```
+
+```java
+FhirProcessor processor = Hl7Handler.fhir()
+    .withMapping(new File("caminho/para/mapeamento.yaml"))
+    .build();
+
+Map<String, Object> map = processor.read(json).toMap();
+MeuVO vo = processor.read(json).bindTo(MeuVO.class);
+```
+
+### Conversão v2 → FHIR Bundle (Monitores e Dispositivos)
+
+A biblioteca converte mensagens HL7 v2 (como `ORU^R01` de monitores multiparamétricos) diretamente em um `Bundle` FHIR (`transaction` ou `collection`), gerando as entidades de `Patient`, `Device` (com identificador EUI-64) e todas as `Observation` com códigos IEEE 11073-10101 (MDC) e unidades fisiológicas convertidas para UCUM via `FhirUnits`:
+
+```java
+FhirResource bundle = Hl7Handler.fhir()
+    .withMapping(new File("mindray-oru-r01-to-fhir.yaml"))
+    .convert(rawHl7); // ou convert(hl7Message)
+
+bundle.isBundle();                            // true
+bundle.get("type");                           // "transaction"
+String jsonBundle = bundle.toPrettyJson();
+```
 
 ---
 
