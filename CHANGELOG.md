@@ -7,7 +7,15 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Não Lançado]
 
-## [0.1.0] - 2026-11-19
+### Adicionado
+- Leitor de HL7 v3 e CDA R2, separado do leitor v2: `Hl7Handler.v3()` devolve um `Hl7V3Builder`, que gera um `Hl7V3Processor` imutável e thread-safe, com `read(String)`, `read(InputStream)` (encoding lido da declaração XML) e `readBytes(byte[])`
+- `Hl7V3Result` com `document()`, `toMap()` (calculado uma vez, em cache e não modificável), `toJson()`, `toRawJson()` (atributos como `@nome`, texto como `#text`) e `bindTo(Class)`
+- `Hl7V3Document` com `format()` (`CDA` ou `MESSAGE`), `versionIdentifier()`, `rootName()`, `templateIds()`, `get(xpath)` (`""` quando ausente), `getAll(xpath)` e `warnings()`
+- Strategy por tipo de documento (`io.github.tiagoadmstz.hl7handler.v3.version`): `CdaR2Strategy`, `Hl7V3MessageStrategy` e `Hl7V3StrategyRegistry`, que aceita estratégias customizadas (por exemplo, por `templateId`) com prioridade sobre as embutidas
+- Mapeamento YAML v3 com XPath 1.0 e prefixos `hl7`, `sdtc` e `xsi`, mais os declarados em `namespaces:` ou em `Hl7V3Builder.namespace(...)`. Usa as mesmas diretivas do v2 (`xpath`/`path`, `fallback`, `padrao`, `tipo`, `valor`, `lista` + `item`), coordenadas semânticas `#documentId`, `#patientId` e outras, e `formato: CDA|MESSAGE`. É validado no `build()`
+- Parser XML seguro, só com `javax.xml`: `DOCTYPE`, entidades externas e `XInclude` são recusados
+
+ - 2026-11-19
 
 ### Adicionado
 - Preparo para publicação no GitHub Packages: JARs de `sources` e `javadoc` para `hl7-handler-core`, `hl7-handler-java11` e `hl7-handler-java8`, e versão controlada pela propriedade `revision` (POM publicado com a versão literal)
