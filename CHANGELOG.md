@@ -7,6 +7,8 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Não Lançado]
 
+## [0.2.0] - 2026-11-19
+
 ### Adicionado
 - Mapeamento v2: `tipoPor` (`typeBy`) converte o valor pelo campo de tipo do item, como o OBX-2. A tabela padrão converte `NM` em número e `DT`/`DTM`/`TS` em data, e deixa os demais tipos como texto. `tipos` (`types`) muda ou amplia a tabela. Um OBX `CNE` ou `ST` deixa de derrubar o `toMap()` quando o mapeamento usa `tipoPor`
 - Conversão de temperatura entre Celsius e Fahrenheit: `Hl7TemperatureUnit`, `Hl7Handler.builder().temperatureUnit(...)` e o metadado `temperatura`/`temperature` no YAML (o builder vence). O valor com `unidadePor` (`unitBy`) é convertido quando a unidade (MDC, UCUM ou símbolo) é de temperatura, e `ajustarUnidade` (`adjustUnit`) troca o nome da unidade. Desligada por padrão
@@ -24,7 +26,7 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - `CcdaStrategy` embutida para C-CDA (US Realm Header), com `versionIdentifier` `C-CDA-R2.1`, `C-CDA-R2.0` ou `C-CDA-R1.1`, coordenadas do paciente, autor e custodiante e avisos de LOINC, `recordTarget` e `languageCode`; o registry padrão passa a consultar C-CDA, CDA e mensagem, nessa ordem
 - `Hl7JsonBinder.toMap(Object)` para converter um VO em `Map`
 
- - 2026-11-19
+## [0.1.0] - 2026-11-19
 
 ### Adicionado
 - Preparo para publicação no GitHub Packages: JARs de `sources` e `javadoc` para `hl7-handler-core`, `hl7-handler-java11` e `hl7-handler-java8`, e versão controlada pela propriedade `revision` (POM publicado com a versão literal)
