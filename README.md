@@ -46,7 +46,7 @@ A biblioteca é publicada em três artefatos com a mesma API (mesmo pacote `io.g
 <dependency>
     <groupId>io.github.tiagoadmstz.hl7handler</groupId>
     <artifactId>hl7-handler-core</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 
@@ -88,17 +88,17 @@ Adicione o artefato correspondente à versão do Java do projeto (ver a tabela a
 <dependency>
     <groupId>io.github.tiagoadmstz.hl7handler</groupId>
     <artifactId>hl7-handler-core</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
 </dependency>
 <dependency>
     <groupId>io.github.tiagoadmstz.hl7handler</groupId>
     <artifactId>hl7-handler-java11</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
 </dependency>
 <dependency>
     <groupId>io.github.tiagoadmstz.hl7handler</groupId>
     <artifactId>hl7-handler-java8</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 
