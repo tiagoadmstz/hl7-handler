@@ -95,20 +95,56 @@ class FhirProcessorTest {
     }
 
     @Test
-    @DisplayName("Deve lançar Hl7ParseException ao ler JSON vazio ou malformado")
-    void shouldThrowOnInvalidJson() {
+    @DisplayName("Deve lançar Hl7ParseException ao ler JSON vazio")
+    void shouldThrowOnEmptyJson() {
         FhirProcessor processor = Hl7Handler.fhir().build();
 
         assertThatThrownBy(() -> processor.read(""))
             .isInstanceOf(Hl7ParseException.class);
+    }
+
+    @Test
+    @DisplayName("Deve lançar Hl7ParseException ao ler JSON só com espaços")
+    void shouldThrowOnBlankJson() {
+        FhirProcessor processor = Hl7Handler.fhir().build();
 
         assertThatThrownBy(() -> processor.read("   "))
             .isInstanceOf(Hl7ParseException.class);
+    }
+
+    @Test
+    @DisplayName("Deve lançar Hl7ParseException quando falta resourceType")
+    void shouldThrowOnMissingResourceType() {
+        FhirProcessor processor = Hl7Handler.fhir().build();
 
         assertThatThrownBy(() -> processor.read("{\"foo\":\"bar\"}"))
             .isInstanceOf(Hl7ParseException.class);
+    }
+
+    @Test
+    @DisplayName("Deve lançar Hl7ParseException ao ler JSON malformado")
+    void shouldThrowOnMalformedJson() {
+        FhirProcessor processor = Hl7Handler.fhir().build();
 
         assertThatThrownBy(() -> processor.read("not-json"))
+            .isInstanceOf(Hl7ParseException.class);
+    }
+
+    @Test
+    @DisplayName("Deve lançar Hl7ParseException quando o JSON não é um objeto")
+    void shouldThrowOnJsonArray() {
+        FhirProcessor processor = Hl7Handler.fhir().build();
+
+        assertThatThrownBy(() -> processor.read("[]"))
+            .isInstanceOf(Hl7ParseException.class);
+    }
+
+    @Test
+    @DisplayName("Deve lançar Hl7ParseException ao ler bytes vazios")
+    void shouldThrowOnEmptyBytes() {
+        FhirProcessor processor = Hl7Handler.fhir().build();
+
+        assertThatThrownBy(() -> processor.readBytes(new byte[0]))
             .isInstanceOf(Hl7ParseException.class);
     }
 
