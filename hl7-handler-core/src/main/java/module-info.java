@@ -29,4 +29,8 @@ module io.github.tiagoadmstz.hl7handler {
     exports io.github.tiagoadmstz.hl7handler.v3.version;
     exports io.github.tiagoadmstz.hl7handler.v3.version.cda;
     exports io.github.tiagoadmstz.hl7handler.v3.version.message;
+    exports io.github.tiagoadmstz.hl7handler.fhir;
+    exports io.github.tiagoadmstz.hl7handler.fhir.mapping;
+    exports io.github.tiagoadmstz.hl7handler.fhir.parser;
+    exports io.github.tiagoadmstz.hl7handler.fhir.writer;
 }

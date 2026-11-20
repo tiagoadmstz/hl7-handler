@@ -7,6 +7,14 @@ e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Não Lançado]
 
+### Adicionado
+- Suporte a HL7 FHIR (R4 e R5): ponto de entrada fluente `Hl7Handler.fhir()` nos três módulos sem dependência de HAPI FHIR (apenas Jackson e JDK)
+- `FhirProcessor` imutável e thread-safe, com `read(String)`, `read(InputStream)` e `readBytes(byte[])`
+- `FhirResource` sobre árvore JSON imutável com `resourceType()`, `id()`, `versionId()`, `version()` (R4/R5) e resolução de caminhos (`get(path)` e `getAll(path)`)
+- Mapeamento YAML para recursos FHIR com notação de propriedades, conversores de tipo, diretivas `fallback`, `padrao`, `valor`, `lista` + `item` e sobreposições `porVersao` (R4 vs R5)
+- `FhirUnits`: conversão canônica de unidades fisiológicas IEEE 11073-10101 (MDC) para UCUM
+- `FhirWriter`: serialização e montagem de recursos e Bundles a partir de Map ou VO (`write()`) e conversão direta de mensagens HL7 v2 `ORU^R01` para FHIR `Bundle` (`convert()`) com `Patient`, `Device` (identificador EUI-64) e `Observation`
+
 ## [0.2.0] - 2026-11-19
 
 ### Adicionado
